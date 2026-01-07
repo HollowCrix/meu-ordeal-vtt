@@ -3,59 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <title>NEXUS VTT // ESTÁVEL</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff4d4d; --blue: #0077ff; --bg: #0d0d0f; }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #050505; }
         body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-
-        /* PAINEL LATERAL */
-        #sidebar { width: 300px; background: var(--bg); border-right: 2px solid var(--neon); padding: 15px; z-index: 100; box-shadow: 5px 0 15px #000; }
-        h1 { font-family: 'Orbitron'; font-size: 16px; color: var(--neon); margin: 0 0 20px 0; }
         
-        /* VIEWPORT */
-        #viewport { flex: 1; background: #1a1a1c; overflow: auto; position: relative; }
-        #map-area { position: relative; display: inline-block; }
-        #map-img { display: block; background: #222; min-width: 500px; min-height: 500px; }
+        /* MENU LATERAL */
+        #menu { width: 300px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 20px; z-index: 1000; overflow-y: auto; }
+        h2 { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+
+        /* AREA DO MAPA */
+        #viewport { flex: 1; position: relative; background: #111; overflow: auto; cursor: crosshair; }
+        #map-wrapper { position: relative; display: inline-block; }
+        #map-img { display: block; }
 
         /* TOKENS */
-        .token { position: absolute; z-index: 10; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        .token { 
+            position: absolute; z-index: 100; cursor: move;
+            display: flex; flex-direction: column; align-items: center;
+        }
         .tk-art { 
             width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
-            background-size: cover; background-position: center; background-color: #333;
+            background-size: cover; background-position: center; background-color: #222;
             box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
-        .token.obj .tk-art { border-radius: 8px; border-color: #ffcc00; }
-        .tk-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px #000; }
-        
-        .bars { width: 80px; height: 10px; margin-top: 4px; }
-        .bar { height: 4px; background: #000; border: 1px solid #333; margin-bottom: 2px; border-radius: 2px; overflow: hidden; }
-        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
-        .mp-fill { background: var(--blue); height: 100%; width: 100%; transition: 0.3s; }
+        .token.obj .tk-art { border-radius: 8px; border-color: #ffaa00; }
+        .token.obj .tk-bars { display: none; }
 
-        /* UI CONTROLS */
-        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; margin-bottom: 10px; }
+        .tk-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px 2px #000; color: #fff; }
+        
+        .tk-bars { width: 80px; margin-top: 5px; }
+        .bar-bg { height: 4px; background: #000; border-radius: 2px; margin-bottom: 2px; overflow: hidden; border: 1px solid #333; }
+        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
+        .mp-fill { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
+
+        /* CONTROLES */
+        .btn { 
+            background: #000; border: 1px solid var(--neon); color: var(--neon); 
+            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
+            font-size: 10px; margin-bottom: 10px; 
+        }
         .btn:hover { background: var(--neon); color: #000; }
-        .config { background: #151518; padding: 10px; border-radius: 5px; border: 1px solid #333; margin-top: 15px; }
-        label { font-size: 10px; color: #777; display: block; margin: 8px 0 3px 0; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 4px; box-sizing: border-box; }
+        .panel-edit { background: #111; padding: 15px; border-radius: 5px; margin-top: 15px; display: none; border: 1px solid #222; }
+        label { font-size: 10px; color: #666; display: block; margin-bottom: 5px; font-family: 'Orbitron'; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <h1>NEXUS VTT // CORE</h1>
+<div id="menu">
+    <h2>NEXUS // CORE</h2>
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+    <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
     
-    <label>LINK DO MAPA (URL):</label>
-    <input type="text" id="map-url" placeholder="Cole o link da imagem aqui..." onchange="setMap(this.value)">
-    <p style="font-size: 9px; color: #555;">Ou use o botão abaixo:</p>
-    <button class="btn" onclick="document.getElementById('map-file').click()">SUBIR ARQUIVO MAPA</button>
-    <input type="file" id="map-file" style="display:none" onchange="fileMap(this)">
+    <div style="display:flex; gap:10px;">
+        <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
+        <button class="btn" onclick="spawn('obj')">📄 OBJETO</button>
+    </div>
 
-    <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
+    <div id="panel-edit" class="panel-edit">
+        <h2>EDITAR SELEÇÃO</h2>
+        <label>NOME:</label>
+        <input type="text" id="in-name" oninput="sync()">
+        
+        <label>TAMANHO / ESCALA:</label>
+        <input type="range" id="in-size" min="40" max="400" value="80" oninput="sync()">
+        
+        <div id="hero-controls">
+            <label>VIDA (%):</label>
+            <input type="range" id="in-hp" min="0" max="100" value="100" oninput="sync()">
+            <label>MANA (%):</label>
+            <input type="range" id="in-mp" min="0" max="100" value="100" oninput="sync()">
+        </div>
 
-    <button class="btn" onclick="addTk('hero')">+ NOVO JOGADOR</button>
-    <button class="btn" onclick="addTk('obj')">+ NOVO OBJETO</button>
+        <button class="btn" onclick="document.getElementById('tk-in').click()">📷 MUDAR FOTO</button>
+        <input type="file" id="tk-in" style="display:none" onchange="loadTkImg(this)">
+        
+        <button class="btn" style="border-color:var(--red); color:var(--red)" onclick="removeTk()">ELIMINAR</button>
+    </div>
+</div>
 
-    <div id="editor" style="display:none" class="config">
-        <h2 style="font-size: 10px;
-            
+<div id="viewport">
+    <div id="map-wrapper">
+        <img id="map-img" src="">
+        </div>
+</div>
+
+<script>
+    let activeTk = null;
+    let zIdx = 100;
+
+    function loadMap(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = e => document.getElementById('map-img').src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function spawn(type) {
+        const t = document.createElement('div');
+        t.className = `token ${type === 'obj' ? 'obj' : ''}`;
+        t.style.left = '50px'; t.style.top = '50px'; t.style.zIndex = zIdx++;
+        
+        t.innerHTML = `
+            <div class="tk-art"></div>
+            <div class="tk-name">${type === 'hero' ? 'Jogador' : 'Objeto'}</div>
+            <div class="tk-bars">
+                <div class="bar-bg"><div class="hp-fill"></div></div>
+                <div class="bar-bg"><div class="mp-fill"></div></div>
+            </div>
+        `;
+
+        t.dataset.size = 80; t.dataset.hp = 100; t.dataset.mp = 100; t.dataset.type = type;
+
+        t.onmousedown = function(e) {
+            select(t);
+            if (e.button !== 0) return;
+            let sx = e.clientX - t.getBoundingClientRect().left;
+            let sy = e.clientY - t.getBoundingClientRect().top;
+
+            function move(ev) {
+                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
+                t.style.left = (ev.pageX - wrap.left - sx) + 'px';
+                t.style.top = (ev.pageY - wrap.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+
+        document.getElementById('map-wrapper').appendChild(t);
+        select(t);
+    }
+
+    function select(t) {
+        activeTk = t;
+        t.style.zIndex = zIdx++;
+        document.getElementById('panel-edit').style.display = 'block';
+        document.getElementById('hero-controls').style.display = t.dataset.type === 'obj' ? 'none' : 'block';
+        
+        document.getElementById('in-name').value = t.querySelector('.tk-name').innerText;
+        document.getElementById('in-size').value = t.dataset.size;
+        document.getElementById('in-hp').value = t.dataset.hp;
+        document.getElementById('in-mp').value = t.dataset.mp;
+
+        document.querySelectorAll('.tk-art').forEach(a => a.style.borderColor = '');
+        t.querySelector('.tk-art').style.borderColor = '#fff';
+    }
+
+    function sync() {
+        if(!activeTk) return;
+        let s = document.getElementById('in-size').value;
+        activeTk.dataset.size = s;
+        activeTk.dataset.hp = document.getElementById('in-hp').value;
+        activeTk.dataset.mp = document.getElementById('in-mp').value;
+
+        let art = activeTk.querySelector('.tk-art');
+        art.style.width = s + 'px';
+        art.style.height = s + 'px';
+        activeTk.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        activeTk.querySelector('.tk-bars').style.width = s + 'px';
+        activeTk.querySelector('.hp-fill').style.width = activeTk.dataset.hp + '%';
+        activeTk.querySelector('.mp-fill').style.width = activeTk.dataset.mp + '%';
+    }
+
+    function loadTkImg(input) {
+        if (input.files && input.files[0] && activeTk) {
+            let reader = new FileReader();
+            reader.onload = e => activeTk.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeTk() {
+        activeTk.remove();
+        document.getElementById('panel-edit').style.display = 'none';
+    }
+</script>
+</body>
+</html>
