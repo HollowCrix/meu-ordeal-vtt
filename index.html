@@ -2,91 +2,85 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ESTÁVEL</title>
+    <title>NEXUS VTT // ORDO REALITAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #050505; }
         body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        /* MENU LATERAL */
-        #menu { width: 300px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 20px; z-index: 1000; overflow-y: auto; }
-        h2 { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        #menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 20px; z-index: 1000; overflow-y: auto; display: flex; flex-direction: column; }
+        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 5px; margin-top: 20px; text-transform: uppercase;}
 
-        /* AREA DO MAPA */
-        #viewport { flex: 1; position: relative; background: #111; overflow: auto; cursor: crosshair; }
+        #viewport { flex: 1; position: relative; background: #111; overflow: auto; }
         #map-wrapper { position: relative; display: inline-block; }
         #map-img { display: block; }
 
-        /* TOKENS */
-        .token { 
-            position: absolute; z-index: 100; cursor: move;
-            display: flex; flex-direction: column; align-items: center;
-        }
+        /* TOKENS E PORTAS */
+        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
         .tk-art { 
             width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
             background-size: cover; background-position: center; background-color: #222;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+            transition: transform 0.2s;
         }
-        .token.obj .tk-art { border-radius: 8px; border-color: #ffaa00; }
-        .token.obj .tk-bars { display: none; }
-
-        .tk-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px 2px #000; color: #fff; }
         
-        .tk-bars { width: 80px; margin-top: 5px; }
-        .bar-bg { height: 4px; background: #000; border-radius: 2px; margin-bottom: 2px; overflow: hidden; border: 1px solid #333; }
-        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
-        .mp-fill { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
+        /* Estilo Porta */
+        .token.door .tk-art { border-radius: 2px; border-color: #8b4513; width: 60px; height: 15px; border-style: double; }
+        .token.obj .tk-art { border-radius: 8px; border-color: #ffaa00; }
+        
+        .tk-name { font-family: 'Orbitron'; font-size: 9px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
+        .tk-bars { width: 100%; margin-top: 5px; }
+        .bar-bg { height: 3px; background: #000; margin-bottom: 2px; border: 1px solid #333; }
+        .hp-fill { background: var(--red); height: 100%; width: 100%; }
 
-        /* CONTROLES */
-        .btn { 
-            background: #000; border: 1px solid var(--neon); color: var(--neon); 
-            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
-            font-size: 10px; margin-bottom: 10px; 
-        }
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; }
         .btn:hover { background: var(--neon); color: #000; }
-        .panel-edit { background: #111; padding: 15px; border-radius: 5px; margin-top: 15px; display: none; border: 1px solid #222; }
-        label { font-size: 10px; color: #666; display: block; margin-bottom: 5px; font-family: 'Orbitron'; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-red { border-color: var(--red); color: var(--red); }
+
+        .panel-edit { background: #111; padding: 15px; border-radius: 5px; margin-top: 10px; display: none; border: 1px solid #222; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 10px; }
+        #dice-log { flex: 1; background: #000; border: 1px solid #1a1a1a; margin-top: 15px; padding: 10px; border-radius: 5px; overflow-y: auto; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h2>NEXUS // CORE</h2>
+    <h2>Cenário</h2>
     <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
     <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
     
-    <div style="display:flex; gap:10px;">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
         <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
-        <button class="btn" onclick="spawn('obj')">📄 OBJETO</button>
+        <button class="btn" onclick="spawn('obj')">📦 OBJETO</button>
     </div>
+    <button class="btn" style="border-color: #8b4513; color: #deb887;" onclick="spawn('door')">🚪 NOVA PORTA</button>
 
     <div id="panel-edit" class="panel-edit">
-        <h2>EDITAR SELEÇÃO</h2>
-        <label>NOME:</label>
+        <h2 id="edit-title">EDITAR</h2>
         <input type="text" id="in-name" oninput="sync()">
-        
-        <label>TAMANHO / ESCALA:</label>
-        <input type="range" id="in-size" min="40" max="400" value="80" oninput="sync()">
+        <label style="font-size: 9px;">TAMANHO / ROTAÇÃO:</label>
+        <input type="range" id="in-size" min="20" max="500" oninput="sync()">
+        <input type="range" id="in-rot" min="0" max="360" value="0" oninput="sync()">
         
         <div id="hero-controls">
-            <label>VIDA (%):</label>
-            <input type="range" id="in-hp" min="0" max="100" value="100" oninput="sync()">
-            <label>MANA (%):</label>
-            <input type="range" id="in-mp" min="0" max="100" value="100" oninput="sync()">
+            <label style="font-size: 9px;">VIDA %:</label>
+            <input type="range" id="in-hp" min="0" max="100" oninput="sync()">
         </div>
 
-        <button class="btn" onclick="document.getElementById('tk-in').click()">📷 MUDAR FOTO</button>
+        <button class="btn" onclick="document.getElementById('tk-in').click()">📷 CARREGAR FOTO</button>
         <input type="file" id="tk-in" style="display:none" onchange="loadTkImg(this)">
-        
-        <button class="btn" style="border-color:var(--red); color:var(--red)" onclick="removeTk()">ELIMINAR</button>
+        <p style="font-size: 8px; color: #555;">*Dica: Para portas, dê 2 cliques para "Abrir/Fechar" (Girar 90º)</p>
+        <button class="btn btn-red" onclick="removeTk()">ELIMINAR</button>
     </div>
+
+    <h2>DADOS</h2>
+    <button class="btn" onclick="roll(20)">ROLAR D20</button>
+    <div id="dice-log"></div>
 </div>
 
 <div id="viewport">
     <div id="map-wrapper">
         <img id="map-img" src="">
-        </div>
+    </div>
 </div>
 
 <script>
@@ -103,19 +97,28 @@
 
     function spawn(type) {
         const t = document.createElement('div');
-        t.className = `token ${type === 'obj' ? 'obj' : ''}`;
-        t.style.left = '50px'; t.style.top = '50px'; t.style.zIndex = zIdx++;
+        t.className = `token ${type}`;
+        t.style.left = '100px'; t.style.top = '100px'; t.style.zIndex = zIdx++;
         
         t.innerHTML = `
             <div class="tk-art"></div>
-            <div class="tk-name">${type === 'hero' ? 'Jogador' : 'Objeto'}</div>
-            <div class="tk-bars">
+            <div class="tk-name">${type.toUpperCase()}</div>
+            <div class="tk-bars" style="${type !== 'hero' ? 'display:none' : ''}">
                 <div class="bar-bg"><div class="hp-fill"></div></div>
-                <div class="bar-bg"><div class="mp-fill"></div></div>
-            </div>
-        `;
+            </div>`;
 
-        t.dataset.size = 80; t.dataset.hp = 100; t.dataset.mp = 100; t.dataset.type = type;
+        t.dataset.size = type === 'door' ? 60 : 80;
+        t.dataset.rot = 0;
+        t.dataset.hp = 100;
+        t.dataset.type = type;
+
+        // DUPLO CLIQUE PARA ABRIR PORTA (Gira 90 graus)
+        t.ondblclick = function() {
+            if(t.dataset.type === 'door') {
+                t.dataset.rot = (parseInt(t.dataset.rot) + 90) % 180;
+                syncVisual(t);
+            }
+        };
 
         t.onmousedown = function(e) {
             select(t);
@@ -134,37 +137,48 @@
 
         document.getElementById('map-wrapper').appendChild(t);
         select(t);
+        syncVisual(t);
     }
 
     function select(t) {
         activeTk = t;
         t.style.zIndex = zIdx++;
         document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('hero-controls').style.display = t.dataset.type === 'obj' ? 'none' : 'block';
+        document.getElementById('hero-controls').style.display = t.dataset.type === 'hero' ? 'block' : 'none';
         
         document.getElementById('in-name').value = t.querySelector('.tk-name').innerText;
         document.getElementById('in-size').value = t.dataset.size;
+        document.getElementById('in-rot').value = t.dataset.rot;
         document.getElementById('in-hp').value = t.dataset.hp;
-        document.getElementById('in-mp').value = t.dataset.mp;
 
-        document.querySelectorAll('.tk-art').forEach(a => a.style.borderColor = '');
-        t.querySelector('.tk-art').style.borderColor = '#fff';
+        document.querySelectorAll('.tk-art').forEach(a => a.style.boxShadow = '');
+        t.querySelector('.tk-art').style.boxShadow = '0 0 15px var(--neon)';
     }
 
     function sync() {
         if(!activeTk) return;
-        let s = document.getElementById('in-size').value;
-        activeTk.dataset.size = s;
+        activeTk.dataset.size = document.getElementById('in-size').value;
+        activeTk.dataset.rot = document.getElementById('in-rot').value;
         activeTk.dataset.hp = document.getElementById('in-hp').value;
-        activeTk.dataset.mp = document.getElementById('in-mp').value;
-
-        let art = activeTk.querySelector('.tk-art');
-        art.style.width = s + 'px';
-        art.style.height = s + 'px';
         activeTk.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        activeTk.querySelector('.tk-bars').style.width = s + 'px';
-        activeTk.querySelector('.hp-fill').style.width = activeTk.dataset.hp + '%';
-        activeTk.querySelector('.mp-fill').style.width = activeTk.dataset.mp + '%';
+        syncVisual(activeTk);
+    }
+
+    function syncVisual(t) {
+        let art = t.querySelector('.tk-art');
+        let s = t.dataset.size;
+        let r = t.dataset.rot;
+        
+        if(t.dataset.type === 'door') {
+            art.style.width = s + 'px';
+            art.style.height = (s/4) + 'px';
+        } else {
+            art.style.width = s + 'px';
+            art.style.height = s + 'px';
+        }
+        
+        art.style.transform = `rotate(${r}deg)`;
+        if(t.querySelector('.hp-fill')) t.querySelector('.hp-fill').style.width = t.dataset.hp + '%';
     }
 
     function loadTkImg(input) {
@@ -175,9 +189,12 @@
         }
     }
 
-    function removeTk() {
-        activeTk.remove();
-        document.getElementById('panel-edit').style.display = 'none';
+    function removeTk() { activeTk.remove(); document.getElementById('panel-edit').style.display = 'none'; }
+
+    function roll(f) {
+        const v = Math.floor(Math.random() * f) + 1;
+        const log = document.getElementById('dice-log');
+        log.innerHTML = `<div>> d${f}: <b>${v}</b></div>` + log.innerHTML;
     }
 </script>
 </body>
