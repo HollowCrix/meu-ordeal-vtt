@@ -2,206 +2,60 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDO REALITAS FINAL</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // ESTÁVEL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@600&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #0a0a0b; }
-        body, html { margin: 0; padding: 0; height: 100vh; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; display: flex; }
+        :root { --neon: #00f2ff; --red: #ff4d4d; --blue: #0077ff; --bg: #0d0d0f; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Painel Lateral */
-        #sidebar { width: 320px; background: #0d0d0f; border-right: 2px solid var(--neon); display: flex; flex-direction: column; z-index: 100; padding: 15px; box-sizing: border-box; }
-        h2 { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); margin: 0 0 15px 0; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        /* PAINEL LATERAL */
+        #sidebar { width: 300px; background: var(--bg); border-right: 2px solid var(--neon); padding: 15px; z-index: 100; box-shadow: 5px 0 15px #000; }
+        h1 { font-family: 'Orbitron'; font-size: 16px; color: var(--neon); margin: 0 0 20px 0; }
+        
+        /* VIEWPORT */
+        #viewport { flex: 1; background: #1a1a1c; overflow: auto; position: relative; }
+        #map-area { position: relative; display: inline-block; }
+        #map-img { display: block; background: #222; min-width: 500px; min-height: 500px; }
 
-        /* Area do Jogo */
-        #canvas-area { flex: 1; position: relative; overflow: auto; background: #1a1a1c; cursor: crosshair; }
-        #map-layer { position: absolute; top: 0; left: 0; min-width: 100%; min-height: 100%; }
-        #main-map { display: block; user-select: none; pointer-events: none; }
-
-        /* Tokens Estilo Cellbit */
-        .token { position: absolute; z-index: 50; display: flex; flex-direction: column; align-items: center; cursor: grab; }
-        .token:active { cursor: grabbing; }
-        .tk-img { 
+        /* TOKENS */
+        .token { position: absolute; z-index: 10; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        .tk-art { 
             width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
             background-size: cover; background-position: center; background-color: #333;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
-        .token.object .tk-img { border-radius: 8px; border-color: #f1c40f; border-style: solid; }
-        .token.object .tk-bars { display: none; }
+        .token.obj .tk-art { border-radius: 8px; border-color: #ffcc00; }
+        .tk-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px #000; }
+        
+        .bars { width: 80px; height: 10px; margin-top: 4px; }
+        .bar { height: 4px; background: #000; border: 1px solid #333; margin-bottom: 2px; border-radius: 2px; overflow: hidden; }
+        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
+        .mp-fill { background: var(--blue); height: 100%; width: 100%; transition: 0.3s; }
 
-        .tk-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px 2px #000; font-weight: bold; }
-        .tk-bars { width: 80px; margin-top: 3px; }
-        .bar-outer { height: 4px; background: #000; border-radius: 2px; margin-bottom: 2px; overflow: hidden; border: 1px solid #333; }
-        .hp-inner { background: var(--red); height: 100%; width: 100%; }
-        .mp-inner { background: var(--mana); height: 100%; width: 100%; }
-
-        /* Interface Lateral */
-        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; margin-bottom: 10px; }
+        /* UI CONTROLS */
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; margin-bottom: 10px; }
         .btn:hover { background: var(--neon); color: #000; }
-        .editor { background: #151518; padding: 10px; border-radius: 5px; display: none; margin-top: 10px; border: 1px solid #333; }
-        label { font-size: 10px; color: #888; display: block; margin-top: 8px; }
-        input[type="text"], input[type="range"] { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; box-sizing: border-box; }
+        .config { background: #151518; padding: 10px; border-radius: 5px; border: 1px solid #333; margin-top: 15px; }
+        label { font-size: 10px; color: #777; display: block; margin: 8px 0 3px 0; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>NEXUS // CORE</h2>
+    <h1>NEXUS VTT // CORE</h1>
     
-    <button class="btn" onclick="document.getElementById('file-map').click()">🖼️ CARREGAR MAPA</button>
-    <input type="file" id="file-map" style="display:none" onchange="readMap(this)">
-    
-    <div style="display:flex; gap:5px;">
-        <button class="btn" onclick="addToken('hero')">👤 HERÓI</button>
-        <button class="btn" onclick="addToken('object')">📦 OBJETO</button>
-    </div>
+    <label>LINK DO MAPA (URL):</label>
+    <input type="text" id="map-url" placeholder="Cole o link da imagem aqui..." onchange="setMap(this.value)">
+    <p style="font-size: 9px; color: #555;">Ou use o botão abaixo:</p>
+    <button class="btn" onclick="document.getElementById('map-file').click()">SUBIR ARQUIVO MAPA</button>
+    <input type="file" id="map-file" style="display:none" onchange="fileMap(this)">
 
-    <div id="editor" class="editor">
-        <h2>EDITAR SELECÇÃO</h2>
-        <label>NOME:</label>
-        <input type="text" id="ed-name" oninput="updateTk()">
-        
-        <label>TAMANHO:</label>
-        <input type="range" id="ed-size" min="40" max="400" value="80" oninput="updateTk()">
-        
-        <div id="vital-inputs">
-            <label>VIDA %:</label>
-            <input type="range" id="ed-hp" min="0" max="100" oninput="updateTk()">
-            <label>MANA %:</label>
-            <input type="range" id="ed-mp" min="0" max="100" oninput="updateTk()">
-        </div>
+    <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
 
-        <button class="btn" style="margin-top:15px;" onclick="document.getElementById('file-tk').click()">📷 MUDAR FOTO</button>
-        <input type="file" id="file-tk" style="display:none" onchange="readTkImg(this)">
-        
-        <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="deleteTk()">🗑️ APAGAR</button>
-    </div>
-</div>
+    <button class="btn" onclick="addTk('hero')">+ NOVO JOGADOR</button>
+    <button class="btn" onclick="addTk('obj')">+ NOVO OBJETO</button>
 
-<div id="canvas-area">
-    <div id="map-layer">
-        <img id="main-map" src="">
-    </div>
-</div>
-
-<script>
-    let selectedTk = null;
-    let zIdx = 100;
-
-    // Função para carregar o Mapa (Testada contra bloqueios)
-    function readMap(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.getElementById('main-map');
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // Adicionar Token
-    function addToken(type) {
-        const t = document.createElement('div');
-        t.className = 'token' + (type === 'object' ? ' object' : '');
-        t.style.left = '150px';
-        t.style.top = '150px';
-        t.style.zIndex = zIdx++;
-        
-        t.innerHTML = `
-            <div class="tk-img"></div>
-            <div class="tk-name">${type === 'hero' ? 'Jogador' : 'Objeto'}</div>
-            <div class="tk-bars">
-                <div class="bar-outer"><div class="hp-inner"></div></div>
-                <div class="bar-outer"><div class="mp-inner"></div></div>
-            </div>
-        `;
-
-        // Atributos de dados
-        t.dataset.size = 80;
-        t.dataset.hp = 100;
-        t.dataset.mp = 100;
-        t.dataset.type = type;
-
-        // Movimentação
-        t.onmousedown = function(e) {
-            clickSelect(t);
-            if (e.button !== 0) return;
+    <div id="editor" style="display:none" class="config">
+        <h2 style="font-size: 10px;
             
-            let shiftX = e.clientX - t.getBoundingClientRect().left;
-            let shiftY = e.clientY - t.getBoundingClientRect().top;
-
-            function move(ev) {
-                const area = document.getElementById('canvas-area');
-                t.style.left = (ev.pageX + area.scrollLeft - shiftX) + 'px';
-                t.style.top = (ev.pageY + area.scrollTop - shiftY) + 'px';
-            }
-
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => document.removeEventListener('mousemove', move);
-        };
-
-        document.getElementById('map-layer').appendChild(t);
-        clickSelect(t);
-    }
-
-    function clickSelect(t) {
-        selectedTk = t;
-        zIdx++;
-        t.style.zIndex = zIdx;
-        
-        document.getElementById('editor').style.display = 'block';
-        document.getElementById('vital-inputs').style.display = (t.dataset.type === 'object' ? 'none' : 'block');
-        
-        // Sincronizar painel
-        document.getElementById('ed-name').value = t.querySelector('.tk-name').innerText;
-        document.getElementById('ed-size').value = t.dataset.size;
-        document.getElementById('ed-hp').value = t.dataset.hp;
-        document.getElementById('ed-mp').value = t.dataset.mp;
-
-        // Feedback visual
-        document.querySelectorAll('.tk-img').forEach(i => i.style.boxShadow = '0 0 15px rgba(0,0,0,0.5)');
-        t.querySelector('.tk-img').style.boxShadow = '0 0 20px var(--neon)';
-    }
-
-    function updateTk() {
-        if (!selectedTk) return;
-        const s = document.getElementById('ed-size').value;
-        const n = document.getElementById('ed-name').value;
-        const hp = document.getElementById('ed-hp').value;
-        const mp = document.getElementById('ed-mp').value;
-
-        selectedTk.dataset.size = s;
-        selectedTk.dataset.hp = hp;
-        selectedTk.dataset.mp = mp;
-
-        const img = selectedTk.querySelector('.tk-img');
-        img.style.width = s + 'px';
-        img.style.height = s + 'px';
-        
-        selectedTk.querySelector('.tk-name').innerText = n;
-        selectedTk.querySelector('.tk-bars').style.width = s + 'px';
-        selectedTk.querySelector('.hp-inner').style.width = hp + '%';
-        selectedTk.querySelector('.mp-inner').style.width = mp + '%';
-    }
-
-    function readTkImg(input) {
-        if (input.files && input.files[0] && selectedTk) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                selectedTk.querySelector('.tk-img').style.backgroundImage = `url(${e.target.result})`;
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function deleteTk() {
-        if (selectedTk) {
-            selectedTk.remove();
-            selectedTk = null;
-            document.getElementById('editor').style.display = 'none';
-        }
-    }
-</script>
-
-</body>
-</html>
