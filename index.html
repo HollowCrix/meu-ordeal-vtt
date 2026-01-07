@@ -8,37 +8,34 @@
         :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #050505; }
         body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        #menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 20px; z-index: 1000; overflow-y: auto; display: flex; flex-direction: column; }
-        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; padding-bottom: 5px; margin-top: 20px; text-transform: uppercase;}
+        #menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 15px; z-index: 1000; overflow-y: auto; }
+        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; margin-top: 15px; text-transform: uppercase;}
 
         #viewport { flex: 1; position: relative; background: #111; overflow: auto; }
         #map-wrapper { position: relative; display: inline-block; }
         #map-img { display: block; }
 
-        /* TOKENS E PORTAS */
+        /* FOG OF WAR */
+        .fog { position: absolute; background: rgba(0,0,0,0.95); border: 1px solid #111; z-index: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #333; font-size: 10px; }
+        .fog:hover { border-color: var(--red); color: var(--red); }
+
+        /* TOKENS */
         .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
-        .tk-art { 
-            width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
-            background-size: cover; background-position: center; background-color: #222;
-            transition: transform 0.2s;
-        }
+        .tk-art { width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%; background-size: cover; background-position: center; background-color: #222; }
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
+        .tk-val { font-size: 10px; color: #aaa; margin-bottom: 2px; font-weight: bold; }
         
-        /* Estilo Porta */
-        .token.door .tk-art { border-radius: 2px; border-color: #8b4513; width: 60px; height: 15px; border-style: double; }
-        .token.obj .tk-art { border-radius: 8px; border-color: #ffaa00; }
-        
-        .tk-name { font-family: 'Orbitron'; font-size: 9px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
-        .tk-bars { width: 100%; margin-top: 5px; }
-        .bar-bg { height: 3px; background: #000; margin-bottom: 2px; border: 1px solid #333; }
-        .hp-fill { background: var(--red); height: 100%; width: 100%; }
+        .tk-bars { width: 100%; margin-top: 2px; }
+        .bar-bg { height: 4px; background: #000; border: 1px solid #333; margin-bottom: 2px; }
+        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
 
         .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; }
         .btn:hover { background: var(--neon); color: #000; }
-        .btn-red { border-color: var(--red); color: var(--red); }
-
-        .panel-edit { background: #111; padding: 15px; border-radius: 5px; margin-top: 10px; display: none; border: 1px solid #222; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 10px; }
-        #dice-log { flex: 1; background: #000; border: 1px solid #1a1a1a; margin-top: 15px; padding: 10px; border-radius: 5px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .btn-fog { border-color: #555; color: #555; }
+        
+        .panel-edit { background: #111; padding: 10px; border-radius: 5px; margin-top: 10px; display: none; border: 1px solid #222; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 5px; font-size: 12px; }
+        .row { display: flex; gap: 5px; }
     </style>
 </head>
 <body>
@@ -47,34 +44,34 @@
     <h2>Cenário</h2>
     <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
     <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
+    <button class="btn btn-fog" onclick="addFog()">🌑 ADICIONAR SOMBRA (FOG)</button>
     
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+    <h2>Elementos</h2>
+    <div class="row">
         <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
         <button class="btn" onclick="spawn('obj')">📦 OBJETO</button>
     </div>
-    <button class="btn" style="border-color: #8b4513; color: #deb887;" onclick="spawn('door')">🚪 NOVA PORTA</button>
 
     <div id="panel-edit" class="panel-edit">
-        <h2 id="edit-title">EDITAR</h2>
+        <h2 style="margin-top:0">EDITAR SELEÇÃO</h2>
+        <label style="font-size:9px">NOME:</label>
         <input type="text" id="in-name" oninput="sync()">
-        <label style="font-size: 9px;">TAMANHO / ROTAÇÃO:</label>
-        <input type="range" id="in-size" min="20" max="500" oninput="sync()">
-        <input type="range" id="in-rot" min="0" max="360" value="0" oninput="sync()">
         
-        <div id="hero-controls">
-            <label style="font-size: 9px;">VIDA %:</label>
-            <input type="range" id="in-hp" min="0" max="100" oninput="sync()">
+        <div id="hero-only">
+            <label style="font-size:9px">VIDA (ATUAL / MÁX):</label>
+            <div class="row">
+                <input type="number" id="in-hp-cur" oninput="sync()" placeholder="Atual">
+                <input type="number" id="in-hp-max" oninput="sync()" placeholder="Máx">
+            </div>
         </div>
 
-        <button class="btn" onclick="document.getElementById('tk-in').click()">📷 CARREGAR FOTO</button>
+        <label style="font-size:9px">TAMANHO:</label>
+        <input type="range" id="in-size" min="30" max="500" oninput="sync()">
+        
+        <button class="btn" onclick="document.getElementById('tk-in').click()">📷 MUDAR FOTO</button>
         <input type="file" id="tk-in" style="display:none" onchange="loadTkImg(this)">
-        <p style="font-size: 8px; color: #555;">*Dica: Para portas, dê 2 cliques para "Abrir/Fechar" (Girar 90º)</p>
-        <button class="btn btn-red" onclick="removeTk()">ELIMINAR</button>
+        <button class="btn" style="border-color:var(--red); color:var(--red)" onclick="removeTk()">ELIMINAR</button>
     </div>
-
-    <h2>DADOS</h2>
-    <button class="btn" onclick="roll(20)">ROLAR D20</button>
-    <div id="dice-log"></div>
 </div>
 
 <div id="viewport">
@@ -95,37 +92,52 @@
         }
     }
 
+    function addFog() {
+        const fog = document.createElement('div');
+        fog.className = 'fog';
+        fog.style.width = '200px'; fog.style.height = '200px';
+        fog.style.left = '100px'; fog.style.top = '100px';
+        fog.innerText = 'CLIQUE PARA REVELAR';
+        
+        // Arrastar sombra
+        fog.onmousedown = function(e) {
+            if(e.ctrlKey) { fog.remove(); return; } // Ctrl+Clique remove
+            let sx = e.clientX - fog.getBoundingClientRect().left;
+            let sy = e.clientY - fog.getBoundingClientRect().top;
+            function move(ev) {
+                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
+                fog.style.left = (ev.pageX - wrap.left - sx) + 'px';
+                fog.style.top = (ev.pageY - wrap.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+        // Clique simples para remover (Revelar)
+        fog.onclick = () => { if(confirm("Revelar esta área?")) fog.remove(); };
+
+        document.getElementById('map-wrapper').appendChild(fog);
+    }
+
     function spawn(type) {
         const t = document.createElement('div');
         t.className = `token ${type}`;
-        t.style.left = '100px'; t.style.top = '100px'; t.style.zIndex = zIdx++;
+        t.style.left = '150px'; t.style.top = '150px'; t.style.zIndex = zIdx++;
         
         t.innerHTML = `
+            <div class="tk-val"></div>
             <div class="tk-art"></div>
-            <div class="tk-name">${type.toUpperCase()}</div>
-            <div class="tk-bars" style="${type !== 'hero' ? 'display:none' : ''}">
+            <div class="tk-name">Novo</div>
+            <div class="tk-bars">
                 <div class="bar-bg"><div class="hp-fill"></div></div>
             </div>`;
 
-        t.dataset.size = type === 'door' ? 60 : 80;
-        t.dataset.rot = 0;
-        t.dataset.hp = 100;
-        t.dataset.type = type;
-
-        // DUPLO CLIQUE PARA ABRIR PORTA (Gira 90 graus)
-        t.ondblclick = function() {
-            if(t.dataset.type === 'door') {
-                t.dataset.rot = (parseInt(t.dataset.rot) + 90) % 180;
-                syncVisual(t);
-            }
-        };
+        t.dataset.size = 80; t.dataset.hpCur = 20; t.dataset.hpMax = 20; t.dataset.type = type;
 
         t.onmousedown = function(e) {
             select(t);
             if (e.button !== 0) return;
             let sx = e.clientX - t.getBoundingClientRect().left;
             let sy = e.clientY - t.getBoundingClientRect().top;
-
             function move(ev) {
                 const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
                 t.style.left = (ev.pageX - wrap.left - sx) + 'px';
@@ -137,48 +149,38 @@
 
         document.getElementById('map-wrapper').appendChild(t);
         select(t);
-        syncVisual(t);
+        sync();
     }
 
     function select(t) {
         activeTk = t;
-        t.style.zIndex = zIdx++;
         document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('hero-controls').style.display = t.dataset.type === 'hero' ? 'block' : 'none';
-        
+        document.getElementById('hero-only').style.display = t.dataset.type === 'hero' ? 'block' : 'none';
         document.getElementById('in-name').value = t.querySelector('.tk-name').innerText;
         document.getElementById('in-size').value = t.dataset.size;
-        document.getElementById('in-rot').value = t.dataset.rot;
-        document.getElementById('in-hp').value = t.dataset.hp;
-
-        document.querySelectorAll('.tk-art').forEach(a => a.style.boxShadow = '');
-        t.querySelector('.tk-art').style.boxShadow = '0 0 15px var(--neon)';
+        document.getElementById('in-hp-cur').value = t.dataset.hpCur;
+        document.getElementById('in-hp-max').value = t.dataset.hpMax;
     }
 
     function sync() {
         if(!activeTk) return;
-        activeTk.dataset.size = document.getElementById('in-size').value;
-        activeTk.dataset.rot = document.getElementById('in-rot').value;
-        activeTk.dataset.hp = document.getElementById('in-hp').value;
-        activeTk.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        syncVisual(activeTk);
-    }
+        let cur = document.getElementById('in-hp-cur').value;
+        let max = document.getElementById('in-hp-max').value;
+        let size = document.getElementById('in-size').value;
 
-    function syncVisual(t) {
-        let art = t.querySelector('.tk-art');
-        let s = t.dataset.size;
-        let r = t.dataset.rot;
+        activeTk.dataset.hpCur = cur;
+        activeTk.dataset.hpMax = max;
+        activeTk.dataset.size = size;
+
+        activeTk.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        activeTk.querySelector('.tk-art').style.width = size + 'px';
+        activeTk.querySelector('.tk-art').style.height = size + 'px';
         
-        if(t.dataset.type === 'door') {
-            art.style.width = s + 'px';
-            art.style.height = (s/4) + 'px';
-        } else {
-            art.style.width = s + 'px';
-            art.style.height = s + 'px';
+        if(activeTk.dataset.type === 'hero') {
+            activeTk.querySelector('.tk-val').innerText = `${cur} / ${max}`;
+            let pct = (cur / max) * 100;
+            activeTk.querySelector('.hp-fill').style.width = pct + '%';
         }
-        
-        art.style.transform = `rotate(${r}deg)`;
-        if(t.querySelector('.hp-fill')) t.querySelector('.hp-fill').style.width = t.dataset.hp + '%';
     }
 
     function loadTkImg(input) {
@@ -190,12 +192,6 @@
     }
 
     function removeTk() { activeTk.remove(); document.getElementById('panel-edit').style.display = 'none'; }
-
-    function roll(f) {
-        const v = Math.floor(Math.random() * f) + 1;
-        const log = document.getElementById('dice-log');
-        log.innerHTML = `<div>> d${f}: <b>${v}</b></div>` + log.innerHTML;
-    }
 </script>
 </body>
 </html>
