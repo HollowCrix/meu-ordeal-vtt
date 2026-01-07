@@ -2,236 +2,79 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDEAL RPG</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // ORDO REALITAS ENGINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --accent: #7000ff; --bg: #050505; --red: #ff3e3e; --mana: #009dff; }
-        * { box-sizing: border-box; }
-        body { 
-            background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; 
-            margin: 0; height: 100vh; display: flex; overflow: hidden; 
-        }
-
-        /* PAINEL LATERAL (MESTRE) */
-        #master-panel { 
-            width: 350px; background: #0a0a0a; border-right: 2px solid #1a1a1a;
-            display: flex; flex-direction: column; z-index: 1000; transition: 0.3s;
-        }
-        .section { padding: 15px; border-bottom: 1px solid #1a1a1a; }
-        .section-title { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); margin-bottom: 10px; letter-spacing: 1px; }
-
-        /* FICHA DO TOKEN SELECIONADO */
-        #config-panel { background: #0f0f0f; flex: 1; overflow-y: auto; padding: 15px; }
-        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 5px; width: 100%; border-radius: 4px; margin-bottom: 8px; }
-
-        /* VIEWPORT DO MAPA */
-        #game-view { flex: 1; position: relative; background: #000; overflow: auto; cursor: grab; }
-        #map-container { position: relative; display: inline-block; }
-        #map-img { display: block; filter: brightness(0.8); }
-        #fog-canvas { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
-
-        /* TOKEN ESTILO RPG CELLBIT */
-        .token { 
-            position: absolute; width: 80px; height: 80px; z-index: 100;
-            cursor: move; display: flex; flex-direction: column; align-items: center;
-            transition: transform 0.1s; pointer-events: auto;
-        }
-        .token-art { 
-            width: 70px; height: 70px; border: 3px solid var(--neon); border-radius: 50%;
-            background-size: cover; background-position: center; background-color: #111;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8), 0 0 5px var(--neon);
-        }
-        .token-info { 
-            width: 100px; text-align: center; margin-top: 5px;
-            text-shadow: 2px 2px 2px #000; pointer-events: none;
-        }
-        .token-name { font-family: 'Orbitron'; font-size: 10px; color: #fff; font-weight: bold; }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #050505; --panel: #0a0a0a; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
-        /* BARRINHAS NO TOKEN */
-        .token-bars { width: 60px; height: 12px; margin-top: 2px; }
-        .t-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-bottom: 2px; overflow: hidden; }
-        .t-fill-pv { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
-        .t-fill-mana { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
+        /* Menu Lateral Estilizado */
+        #side-menu { width: 350px; background: var(--panel); border-right: 2px solid #1a1a1a; display: flex; flex-direction: column; z-index: 1000; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .menu-inner { padding: 20px; overflow-y: auto; flex: 1; }
+        h2 { font-family: 'Orbitron'; font-size: 13px; color: var(--neon); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; border-left: 3px solid var(--neon); padding-left: 10px; }
 
-        /* ESTILO OBJETO (SEM BARRA) */
-        .token.object .token-art { border-radius: 8px; border-color: #555; width: 50px; height: 50px; }
-        .token.object .token-bars { display: none; }
+        /* Viewport e Mapa */
+        #viewport { flex: 1; position: relative; background: #000; overflow: auto; display: flex; justify-content: center; align-items: center; cursor: crosshair; }
+        #map-container { position: relative; line-height: 0; }
+        #map-img { display: block; user-select: none; -webkit-user-drag: none; }
 
-        /* BOTÕES */
+        /* TOKENS PROFISSIONAIS */
+        .token { 
+            position: absolute; display: flex; flex-direction: column; align-items: center; 
+            z-index: 100; cursor: grab; transition: transform 0.1s; 
+        }
+        .token:active { cursor: grabbing; }
+        .token-art { 
+            width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
+            background-size: cover; background-position: center; background-color: #111;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8); position: relative;
+        }
+        
+        /* Estilo Objeto Interagível */
+        .token.object .token-art { border-radius: 8px; border-color: #ff9d00; border-style: dashed; }
+        .token.object .bars { display: none; }
+
+        .token-label { 
+            margin-top: 5px; font-family: 'Orbitron'; font-size: 10px; font-weight: bold;
+            text-shadow: 2px 2px 4px #000; color: #fff; white-space: nowrap;
+        }
+
+        /* BARRAS DE STATUS */
+        .bars { width: 100%; height: 10px; margin-top: 4px; pointer-events: none; }
+        .bar { height: 4px; background: #222; border-radius: 2px; margin-bottom: 2px; overflow: hidden; }
+        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
+        .mp-fill { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
+
+        /* INTERFACE DE CONTROLE */
+        .control-group { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
         .btn { 
-            background: var(--accent); color: #fff; border: none; padding: 10px; 
-            width: 100%; border-radius: 4px; font-family: 'Orbitron'; font-size: 10px;
-            cursor: pointer; margin-bottom: 5px; font-weight: bold;
+            background: transparent; border: 1px solid var(--neon); color: var(--neon); 
+            padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
+            font-size: 9px; margin-bottom: 8px; transition: 0.2s; text-transform: uppercase;
         }
-        .btn:hover { filter: brightness(1.2); }
-        .btn-red { background: var(--red); }
+        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
+        .btn-del { border-color: var(--red); color: var(--red); }
+        .btn-del:hover { background: var(--red); color: #fff; }
 
-        /* LOG DE DADOS */
-        #dice-log { 
-            position: fixed; bottom: 20px; right: 20px; width: 250px; 
-            max-height: 200px; background: rgba(0,0,0,0.85); 
-            border: 1px solid var(--neon); border-radius: 8px; 
-            padding: 10px; overflow-y: auto; z-index: 2000;
-        }
+        label { font-size: 11px; color: #666; display: block; margin-bottom: 5px; font-family: 'Orbitron'; }
+        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 4px; }
+        
+        /* Slider de Tamanho */
+        .range-styled { width: 100%; margin: 10px 0; accent-color: var(--neon); }
     </style>
 </head>
 <body>
 
-    <aside id="master-panel">
-        <div class="section">
-            <div class="section-title">NEXUS // CONTROLE DO MESTRE</div>
-            <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
-            <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
-            <button class="btn" style="background:#333;" onclick="spawnToken('hero')">👤 NOVO JOGADOR</button>
-            <button class="btn" style="background:#333;" onclick="spawnToken('object')">📦 NOVO OBJETO/NPC</button>
+<div id="side-menu">
+    <div class="menu-inner">
+        <h2>Painel do Mestre</h2>
+        <button class="btn" onclick="document.getElementById('map-load').click()">🖼️ Mudar Mapa</button>
+        <input type="file" id="map-load" style="display:none" onchange="updateMap(this)">
+        
+        <div style="display:flex; gap:10px;">
+            <button class="btn" onclick="spawn('hero')">👤 Herói</button>
+            <button class="btn" onclick="spawn('object')">📦 Objeto</button>
         </div>
 
-        <div id="config-panel">
-            <div class="section-title">CONFIGURAÇÃO DO TOKEN</div>
-            <p style="font-size:11px; color:#666;">Selecione um token no mapa para editar</p>
-            <div id="edit-controls" style="display:none">
-                <label style="font-size:10px;">NOME:</label>
-                <input type="text" id="edit-name" class="input-dark" oninput="updateActiveToken()">
-                <label style="font-size:10px;">PV ATUAL / MÁX:</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="number" id="edit-pv" class="input-dark" oninput="updateActiveToken()">
-                    <input type="number" id="edit-pv-max" class="input-dark" oninput="updateActiveToken()">
-                </div>
-                <label style="font-size:10px;">MANA ATUAL / MÁX:</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="number" id="edit-mana" class="input-dark" oninput="updateActiveToken()">
-                    <input type="number" id="edit-mana-max" class="input-dark" oninput="updateActiveToken()">
-                </div>
-                <button class="btn" onclick="document.getElementById('token-img-in').click()">🖼️ MUDAR FOTO</button>
-                <input type="file" id="token-img-in" style="display:none" onchange="changeTokenImg(this)">
-                <button class="btn btn-red" onclick="deleteToken()">DELETAR TOKEN</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <button class="btn" style="background: #222;" onclick="rollD20()">🎲 ROLAR d20 GERAL</button>
-        </div>
-    </aside>
-
-    <main id="game-view">
-        <div id="map-container">
-            <img id="map-img" src="">
-            <canvas id="fog-canvas"></canvas>
-            </div>
-    </main>
-
-    <div id="dice-log"></div>
-
-    <script>
-        let selectedToken = null;
-        const diceLog = document.getElementById('dice-log');
-
-        // MAPA
-        function loadMap(input) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('map-img').src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        // GERAR TOKENS
-        function spawnToken(type) {
-            const t = document.createElement('div');
-            t.className = `token ${type === 'object' ? 'object' : ''}`;
-            t.dataset.pv = 100; t.dataset.pvMax = 100;
-            t.dataset.mana = 50; t.dataset.manaMax = 50;
-            t.dataset.name = type === 'hero' ? 'Jogador' : 'Objeto';
-
-            t.innerHTML = `
-                <div class="token-art" style="background-image: url('https://i.imgur.com/He99t7t.png')"></div>
-                <div class="token-info">
-                    <div class="token-name">${t.dataset.name}</div>
-                    <div class="token-bars">
-                        <div class="t-bar"><div class="t-fill-pv"></div></div>
-                        <div class="t-bar"><div class="t-fill-mana"></div></div>
-                    </div>
-                </div>
-            `;
-
-            t.onmousedown = (e) => {
-                selectToken(t);
-                if (e.button !== 0) return;
-                let shiftX = e.clientX - t.getBoundingClientRect().left;
-                let shiftY = e.clientY - t.getBoundingClientRect().top;
-
-                function moveAt(pageX, pageY) {
-                    const rect = document.getElementById('map-container').getBoundingClientRect();
-                    t.style.left = (pageX - rect.left - shiftX) + 'px';
-                    t.style.top = (pageY - rect.top - shiftY) + 'px';
-                }
-
-                function onMouseMove(ev) { moveAt(ev.pageX, ev.pageY); }
-                document.addEventListener('mousemove', onMouseMove);
-                document.onmouseup = () => document.removeEventListener('mousemove', onMouseMove);
-            };
-
-            document.getElementById('map-container').appendChild(t);
-        }
-
-        function selectToken(t) {
-            selectedToken = t;
-            document.getElementById('edit-controls').style.display = 'block';
-            document.getElementById('edit-name').value = t.dataset.name;
-            document.getElementById('edit-pv').value = t.dataset.pv;
-            document.getElementById('edit-pv-max').value = t.dataset.pvMax;
-            document.getElementById('edit-mana').value = t.dataset.mana;
-            document.getElementById('edit-mana-max').value = t.dataset.manaMax;
-            
-            // Highlight
-            document.querySelectorAll('.token-art').forEach(a => a.style.borderColor = 'var(--neon)');
-            t.querySelector('.token-art').style.borderColor = '#fff';
-        }
-
-        function updateActiveToken() {
-            if (!selectedToken) return;
-            const t = selectedToken;
-            t.dataset.name = document.getElementById('edit-name').value;
-            t.dataset.pv = document.getElementById('edit-pv').value;
-            t.dataset.pvMax = document.getElementById('edit-pv-max').value;
-            t.dataset.mana = document.getElementById('edit-mana').value;
-            t.dataset.manaMax = document.getElementById('edit-mana-max').value;
-
-            t.querySelector('.token-name').innerText = t.dataset.name;
-            
-            const pvPerc = (t.dataset.pv / t.dataset.pvMax) * 100;
-            const manaPerc = (t.dataset.mana / t.dataset.manaMax) * 100;
-            
-            t.querySelector('.t-fill-pv').style.width = pvPerc + '%';
-            t.querySelector('.t-fill-mana').style.width = manaPerc + '%';
-        }
-
-        function changeTokenImg(input) {
-            if (!selectedToken) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                selectedToken.querySelector('.token-art').style.backgroundImage = `url(${e.target.result})`;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function deleteToken() {
-            if (selectedToken) {
-                selectedToken.remove();
-                selectedToken = null;
-                document.getElementById('edit-controls').style.display = 'none';
-            }
-        }
-
-        function rollD20() {
-            const roll = Math.floor(Math.random() * 20) + 1;
-            const div = document.createElement('div');
-            div.style.borderLeft = "2px solid var(--neon)";
-            div.style.paddingLeft = "10px";
-            div.style.marginBottom = "5px";
-            div.innerHTML = `<small>${new Date().toLocaleTimeString()}</small><br>🎲 Resultado: <b>${roll}</b>`;
-            diceLog.prepend(div);
-        }
-    </script>
-</body>
-</html>
+        <div id="edit-panel" style="display:none; margin-top:10px;">
+            <h2>Configurar Seleção</h2>
