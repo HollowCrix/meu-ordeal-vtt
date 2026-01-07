@@ -2,159 +2,195 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS HUB // ORDEAL</title>
+    <title>NEXUS HUB PRO // ORDEAL RPG</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --bg: #010409; --panel: #0d1117; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; }
+        :root { --neon: #00f2ff; --bg: #010409; --panel: #0d1117; --accent: #7000ff; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; display: flex; overflow: hidden; }
         
-        /* Menu Lateral (Escondido em telas pequenas se quiseres, mas mantemos os ícones) */
-        nav { width: 60px; background: #000; border-right: 1px solid var(--neon); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 20px; z-index: 1000; flex-shrink: 0; }
-        .nav-btn { font-size: 20px; cursor: pointer; opacity: 0.5; }
-        .nav-btn.active { opacity: 1; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+        /* Layout Principal */
+        .sidebar { width: 250px; background: var(--panel); border-right: 1px solid var(--neon); display: flex; flex-direction: column; padding: 15px; gap: 15px; z-index: 100; }
+        .main-view { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .inspector { width: 280px; background: var(--panel); border-left: 1px solid var(--neon); padding: 15px; display: flex; flex-direction: column; gap: 15px; }
 
-        main { flex: 1; position: relative; display: flex; flex-direction: column; min-width: 0; }
-        .tab-content { display: none; width: 100%; height: 100%; }
-        .tab-content.active { display: flex; }
+        /* Mapa e Fog */
+        #viewport { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        #map-img { max-width: 100%; max-height: 100%; object-fit: contain; z-index: 1; }
+        #fog-canvas { position: absolute; top: 0; left: 0; z-index: 10; cursor: crosshair; opacity: 0.8; }
 
-        /* Area do Mapa */
-        #vp { flex: 1; background: #000; position: relative; overflow: hidden; touch-action: none; }
-        #map-display { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-        #fog-canvas { position: absolute; top: 0; left: 0; z-index: 10; opacity: 0.8; }
-        
-        /* Painel Lateral Responsivo */
-        .side-ui { width: 260px; background: var(--panel); border-left: 1px solid rgba(0,242,255,0.2); display: flex; flex-direction: column; padding: 10px; gap: 10px; overflow-y: auto; flex-shrink: 0; }
-        
-        /* Ajuste para Celular */
-        @media (max-width: 768px) {
-            .side-ui { display: none; } /* Esconde o painel no celular para focar no mapa */
-            .show-menu .side-ui { display: flex; position: absolute; right: 0; height: 100%; z-index: 2000; width: 80%; }
+        /* Tokens */
+        .token { 
+            position: absolute; border-radius: 50%; border: 3px solid var(--neon); 
+            background-size: cover; background-position: center; z-index: 100; 
+            cursor: move; box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
-
-        .token { position: absolute; border-radius: 50%; border: 2px solid var(--neon); background-size: cover; background-position: center; z-index: 100; box-shadow: 0 0 10px #000; touch-action: none; }
         .token-small { width: 40px; height: 40px; }
-        .token-medium { width: 60px; height: 60px; }
-        .token-large { width: 90px; height: 90px; }
+        .token-medium { width: 70px; height: 70px; }
+        .token-large { width: 120px; height: 120px; }
+
+        /* UI Elements */
+        .card { background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,255,0.2); padding: 12px; border-radius: 8px; }
+        h3 { font-family: 'Orbitron'; font-size: 12px; color: var(--neon); margin: 0 0 10px 0; text-transform: uppercase; }
+        button { background: var(--neon); color: #000; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; width: 100%; transition: 0.3s; }
+        button:hover { background: #fff; box-shadow: 0 0 10px var(--neon); }
+        input, select { background: #000; border: 1px solid #333; color: #fff; padding: 6px; width: 100%; border-radius: 4px; margin-bottom: 5px; }
         
-        button { background: var(--neon); border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; }
-        input, select { background: #000; border: 1px solid #333; color: #fff; padding: 5px; font-size: 12px; }
+        /* Iniciativa */
+        .init-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #222; font-size: 14px; }
+        .init-active { background: rgba(0,242,255,0.1); border-left: 3px solid var(--neon); }
     </style>
 </head>
-<body id="body-tag">
+<body>
 
-<nav>
-    <div class="nav-btn active" onclick="openTab('home', this)">🏠</div>
-    <div class="nav-btn" onclick="openTab('game', this)">⚔️</div>
-    <div class="nav-btn" onclick="document.getElementById('body-tag').classList.toggle('show-menu')">⚙️</div>
-</nav>
+    <aside class="sidebar">
+        <h3>⚔️ Iniciativa</h3>
+        <div class="card">
+            <input type="text" id="init-name" placeholder="Nome">
+            <input type="number" id="init-val" placeholder="Valor">
+            <button onclick="addInitiative()">ADICIONAR</button>
+        </div>
+        <div id="init-list" style="flex: 1; overflow-y: auto;"></div>
+        <button onclick="nextTurn()" style="background: var(--accent); color: #fff;">PRÓXIMO TURNO</button>
+    </aside>
 
-<main>
-    <div id="home" class="tab-content active" style="padding:20px; flex-direction: column;">
-        <h1 style="color:var(--neon); font-family:'Orbitron';">NEXUS HUB</h1>
-        <p>Acesse a aba ⚔️ para o Tabletop.</p>
-        <button onclick="openTab('game', document.querySelectorAll('.nav-btn')[1])">ENTRAR NA MESA</button>
-    </div>
-
-    <div id="game" class="tab-content">
-        <div id="vp">
-            <img id="map-display" src="">
+    <main class="main-view">
+        <div id="viewport">
+            <img id="map-img" src="">
             <canvas id="fog-canvas"></canvas>
         </div>
-        <aside class="side-ui">
-            <h3 style="color:var(--neon); font-size:12px;">GERADOR DE TOKEN</h3>
-            <input type="file" id="tk-img" accept="image/*">
-            <select id="tk-size">
-                <option value="token-small">Pequeno</option>
-                <option value="token-medium" selected>Médio</option>
-                <option value="token-large">Grande</option>
-            </select>
-            <hr style="border:0; border-top:1px solid #222; width:100%;">
-            <h3 style="color:var(--neon); font-size:12px;">MAPA</h3>
+    </main>
+
+    <aside class="inspector">
+        <h3>🗺️ Cenário</h3>
+        <div class="card">
+            <label style="font-size: 10px;">CARREGAR MAPA:</label>
             <input type="file" id="map-in" accept="image/*">
-            <button onclick="clearFog()">LIMPAR TUDO</button>
-            <button onclick="resetFog()" style="background:#333; color:#ccc;">COBRIR TUDO</button>
-        </aside>
-    </div>
-</main>
+            <button onclick="resetFog()" style="margin-top:5px; background: #333; color: #fff;">REPOR NÉVOA</button>
+            <button onclick="ctx.clearRect(0,0,canvas.width,canvas.height)" style="margin-top:5px; background: #1a1a1a; color: #666;">REMOVER NÉVOA</button>
+        </div>
+
+        <h3>👤 Personagem</h3>
+        <div class="card">
+            <label style="font-size: 10px;">FOTO DO TOKEN:</label>
+            <input type="file" id="tk-img" accept="image/*">
+            <label style="font-size: 10px;">TAMANHO:</label>
+            <select id="tk-size">
+                <option value="token-small">Pequeno (1x1)</option>
+                <option value="token-medium" selected>Médio (2x2)</option>
+                <option value="token-large">Grande (3x3)</option>
+            </select>
+            <p style="font-size: 10px; color: #666; margin-top: 10px;">• <b>Duplo Clique</b> no mapa para criar.<br>• <b>Botão Direito</b> para apagar token.</p>
+        </div>
+
+        <div id="log" style="flex: 1; background: #000; border: 1px solid #222; padding: 10px; font-size: 12px; border-radius: 5px; color: var(--neon); overflow-y: auto;">
+            [SISTEMA]: Nexus Pro Ativo.
+        </div>
+    </aside>
 
 <script>
-    const vp = document.getElementById('vp');
+    const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('fog-canvas');
     const ctx = canvas.getContext('2d');
-    let currentTokenImg = null;
+    const mapImg = document.getElementById('map-img');
+    let currentTokenURL = "";
+    let initiative = [];
+    let turnIndex = 0;
 
-    function openTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-        if(id === 'game') setTimeout(resizeCanvas, 100);
-    }
-
-    function resizeCanvas() {
-        canvas.width = vp.clientWidth;
-        canvas.height = vp.clientHeight;
-        resetFog();
-    }
+    // --- LOGICA DE MAPA ---
+    document.getElementById('map-in').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            mapImg.src = URL.createObjectURL(file);
+            mapImg.onload = () => {
+                canvas.width = viewport.clientWidth;
+                canvas.height = viewport.clientHeight;
+                resetFog();
+            };
+        }
+    };
 
     function resetFog() {
+        canvas.width = viewport.clientWidth;
+        canvas.height = viewport.clientHeight;
         ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = '#050b14';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    function clearFog() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Movimento da névoa (Touch e Mouse)
-    const handleMove = (e) => {
+    // --- LOGICA DE NEVOA (DESENHAR) ---
+    let isDrawing = false;
+    canvas.onmousedown = () => isDrawing = true;
+    window.onmouseup = () => isDrawing = false;
+    canvas.onmousemove = (e) => {
+        if (!isDrawing) return;
         const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX || e.touches[0].clientX) - rect.left;
-        const y = (e.clientY || e.touches[0].clientY) - rect.top;
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
-        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 45, 0, Math.PI * 2);
         ctx.fill();
     };
 
-    canvas.addEventListener('mousemove', (e) => { if(e.buttons > 0) handleMove(e); });
-    canvas.addEventListener('touchmove', (e) => { handleMove(e); e.preventDefault(); }, {passive: false});
-
-    // Tokens
+    // --- LOGICA DE TOKENS ---
     document.getElementById('tk-img').onchange = (e) => {
-        currentTokenImg = URL.createObjectURL(e.target.files[0]);
+        if(e.target.files[0]) currentTokenURL = URL.createObjectURL(e.target.files[0]);
     };
 
-    vp.ondblclick = (e) => {
+    viewport.ondblclick = (e) => {
+        if(e.target !== canvas && e.target !== viewport) return;
         const t = document.createElement('div');
         const size = document.getElementById('tk-size').value;
         t.className = `token ${size}`;
-        if(currentTokenImg) t.style.backgroundImage = `url(${currentTokenImg})`;
-        else t.style.backgroundColor = 'var(--neon)';
+        if(currentTokenURL) t.style.backgroundImage = `url(${currentTokenURL})`;
+        else t.style.backgroundColor = 'var(--accent)';
 
-        const rect = vp.getBoundingClientRect();
-        t.style.left = (e.clientX - rect.left - 20) + 'px';
-        t.style.top = (e.clientY - rect.top - 20) + 'px';
+        const rect = viewport.getBoundingClientRect();
+        t.style.left = (e.clientX - rect.left - 30) + 'px';
+        t.style.top = (e.clientY - rect.top - 30) + 'px';
 
         // Arrastar Token
-        const drag = (ev) => {
-            const moveX = (ev.clientX || ev.touches[0].clientX) - rect.left - 20;
-            const moveY = (ev.clientY || ev.touches[0].clientY) - rect.top - 20;
-            t.style.left = moveX + 'px';
-            t.style.top = moveY + 'px';
+        t.onmousedown = (ev) => {
+            ev.stopPropagation();
+            const shiftX = ev.clientX - t.getBoundingClientRect().left;
+            const shiftY = ev.clientY - t.getBoundingClientRect().top;
+            function move(ev) {
+                t.style.left = (ev.clientX - rect.left - shiftX) + 'px';
+                t.style.top = (ev.clientY - rect.top - shiftY) + 'px';
+            }
+            document.onmousemove = move;
+            document.onmouseup = () => document.onmousemove = null;
         };
-
-        t.addEventListener('mousedown', () => { document.addEventListener('mousemove', drag); });
-        t.addEventListener('touchstart', () => { document.addEventListener('touchmove', drag); });
-        window.addEventListener('mouseup', () => { document.removeEventListener('mousemove', drag); });
-        window.addEventListener('touchend', () => { document.removeEventListener('touchmove', drag); });
-
         t.oncontextmenu = (ev) => { ev.preventDefault(); t.remove(); };
-        vp.appendChild(t);
+        viewport.appendChild(t);
     };
+
+    // --- INICIATIVA ---
+    function addInitiative() {
+        const name = document.getElementById('init-name').value;
+        const val = parseInt(document.getElementById('init-val').value) || 0;
+        if(!name) return;
+        initiative.push({name, val});
+        initiative.sort((a,b) => b.val - a.val);
+        updateInitUI();
+    }
+
+    function updateInitUI() {
+        const list = document.getElementById('init-list');
+        list.innerHTML = '';
+        initiative.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = `init-item ${i === turnIndex ? 'init-active' : ''}`;
+            div.innerHTML = `<span>#${item.val} <b>${item.name}</b></span>`;
+            list.appendChild(div);
+        });
+    }
+
+    function nextTurn() {
+        if(initiative.length === 0) return;
+        turnIndex = (turnIndex + 1) % initiative.length;
+        updateInitUI();
+        document.getElementById('log').innerHTML = `<div>> Turno: ${initiative[turnIndex].name}</div>` + document.getElementById('log').innerHTML;
+    }
 </script>
 </body>
 </html>
