@@ -2,244 +2,200 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS HUB ULTRA // ORDEAL</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS VTT // ORDEAL RPG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --bg: #010409; --panel: #0d1117; --accent: #7000ff; --red: #ff4d4d; --green: #00ff88; }
-        * { box-sizing: border-box; cursor: default; }
-        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; display: flex; overflow: hidden; }
+        :root { --neon: #00f2ff; --accent: #7000ff; --bg: #02050a; --card: #0d1117; --red: #ff3e3e; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; display: grid; grid-template-columns: 320px 1fr 280px; overflow: hidden; }
+
+        /* Estilização Geral de Painéis */
+        header { grid-column: 1 / -1; background: #000; border-bottom: 1px solid var(--neon); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-family: 'Orbitron'; font-size: 18px; margin: 0; color: var(--neon); letter-spacing: 2px; }
+        aside, main { height: calc(100vh - 50px); overflow-y: auto; padding: 15px; border-right: 1px solid rgba(0,242,255,0.1); }
+
+        /* Ficha de Personagem (Esquerda) */
+        .stat-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); border: 1px solid #333; padding: 10px; border-radius: 5px; text-align: center; }
+        .stat-card label { font-size: 10px; color: var(--neon); display: block; font-family: 'Orbitron'; }
+        .stat-card input { background: transparent; border: none; color: #fff; font-size: 20px; width: 100%; text-align: center; font-weight: bold; }
         
-        /* Layout */
-        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--neon); display: flex; flex-direction: column; padding: 15px; gap: 15px; z-index: 100; }
-        .main-view { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .inspector { width: 300px; background: var(--panel); border-left: 1px solid var(--neon); padding: 15px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
+        .resource-bar { background: #1a1a1a; border-radius: 3px; height: 8px; margin-top: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: 0.3s; }
 
-        /* Map & Fog */
-        #viewport { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #map-img { max-width: 100%; max-height: 100%; object-fit: contain; z-index: 1; pointer-events: none; }
-        #fog-canvas { position: absolute; z-index: 10; cursor: crosshair; opacity: 0.85; }
+        .skills-container h3 { font-family: 'Orbitron'; font-size: 12px; border-bottom: 1px solid var(--accent); padding-bottom: 5px; margin-top: 15px; }
+        .skill-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px; font-size: 13px; }
+        .skill-row button { background: transparent; border: 1px solid var(--neon); color: var(--neon); border-radius: 3px; cursor: pointer; font-size: 10px; padding: 2px 6px; }
+        .skill-row button:hover { background: var(--neon); color: #000; }
 
-        /* Tokens Avançados */
-        .token { 
-            position: absolute; border-radius: 50%; border: 3px solid var(--neon); 
-            background-size: cover; background-position: center; z-index: 100; 
-            cursor: move !important; box-shadow: 0 0 15px rgba(0,0,0,0.9);
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .hp-bar-container { width: 100%; height: 6px; background: #000; position: absolute; top: -12px; border: 1px solid #444; border-radius: 3px; overflow: hidden; }
-        .hp-bar-fill { height: 100%; background: var(--green); width: 100%; transition: width 0.3s; }
-        
-        .token-small { width: 45px; height: 45px; }
-        .token-medium { width: 75px; height: 75px; }
-        .token-large { width: 130px; height: 130px; }
+        /* Área do Mapa (Centro) */
+        #viewport { background: #000; position: relative; cursor: crosshair; overflow: hidden; }
+        #map-img { width: 100%; height: 100%; object-fit: contain; }
+        #fog { position: absolute; top:0; left:0; pointer-events: auto; }
 
-        /* Painel de Dados */
-        .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        .dice-btn { background: #1a1f26; border: 1px solid var(--accent); color: var(--accent); padding: 8px; font-weight: bold; cursor: pointer !important; font-size: 10px; border-radius: 4px; transition: 0.2s; }
-        .dice-btn:hover { background: var(--accent); color: #fff; }
+        /* Log e Controles (Direita) */
+        .log-box { background: #000; border: 1px solid #222; height: 300px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 12px; color: #aaa; margin-bottom: 15px; border-radius: 5px; }
+        .log-entry { margin-bottom: 8px; border-left: 2px solid var(--accent); padding-left: 8px; }
+        .critical { color: #ffdb15; font-weight: bold; }
 
-        /* UI */
-        .card { background: rgba(0,0,0,0.4); border: 1px solid rgba(0,242,255,0.1); padding: 12px; border-radius: 8px; }
-        h3 { font-family: 'Orbitron'; font-size: 10px; color: var(--neon); margin: 0 0 10px 0; letter-spacing: 2px; border-bottom: 1px solid rgba(0,242,255,0.1); padding-bottom: 5px; }
-        button { background: var(--neon); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer !important; font-family: 'Orbitron'; font-size: 10px; width: 100%; }
-        input, select { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 100%; border-radius: 4px; margin-bottom: 8px; }
-        
-        /* Iniciativa & Log */
-        .init-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #1a1f26; }
-        .init-active { background: rgba(0,242,255,0.1); border-left: 4px solid var(--neon); box-shadow: inset 5px 0 10px rgba(0,242,255,0.1); }
-        #log { flex: 1; background: #000; border: 1px solid #1a1f26; padding: 10px; font-size: 12px; color: var(--neon); overflow-y: auto; font-family: monospace; }
+        button.action-btn { background: var(--accent); color: #fff; border: none; padding: 12px; width: 100%; border-radius: 5px; font-family: 'Orbitron'; font-size: 12px; cursor: pointer; margin-bottom: 10px; }
+        button.action-btn:hover { filter: brightness(1.2); box-shadow: 0 0 10px var(--accent); }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <h3>🎲 DICE ROLLER</h3>
-        <div class="card dice-grid">
-            <button class="dice-btn" onclick="rollDice(4)">D4</button>
-            <button class="dice-btn" onclick="rollDice(6)">D6</button>
-            <button class="dice-btn" onclick="rollDice(8)">D8</button>
-            <button class="dice-btn" onclick="rollDice(10)">D10</button>
-            <button class="dice-btn" onclick="rollDice(20)">D20</button>
-            <button class="dice-btn" onclick="rollDice(100)">D100</button>
-        </div>
+<header>
+    <h1>NEXUS VTT // CORE SYSTEM</h1>
+    <div style="font-size: 12px; color: #666;">MODO: MESTRE DE JOGO</div>
+</header>
 
-        <h3>⚔️ INICIATIVA</h3>
-        <div class="card">
-            <input type="text" id="init-name" placeholder="Nome">
-            <input type="number" id="init-val" placeholder="Ini">
-            <button onclick="addInitiative()">ADICIONAR</button>
+<aside>
+    <div class="stat-group">
+        <div class="stat-card">
+            <label>CORPO</label>
+            <input type="number" id="attr-corpo" value="5" onchange="updateResources()">
         </div>
-        <div id="init-list" style="flex: 1; overflow-y: auto;"></div>
-        <button onclick="nextTurn()" style="background: var(--accent); color: #fff;">PRÓXIMO TURNO</button>
-    </aside>
-
-    <main class="main-view">
-        <div id="viewport">
-            <img id="map-img" src="">
-            <canvas id="fog-canvas"></canvas>
+        <div class="stat-card">
+            <label>MENTE</label>
+            <input type="number" id="attr-mente" value="3">
         </div>
-    </main>
-
-    <aside class="inspector">
-        <h3>🗺️ AMBIENTE</h3>
-        <div class="card">
-            <input type="file" id="map-in" accept="image/*">
-            <button onclick="fitFogToMap()" style="margin-top:5px;">SINCRONIZAR</button>
-            <button onclick="resetFog()" style="background:#222; margin-top:5px;">NÉVOA TOTAL</button>
+        <div class="stat-card">
+            <label>ALMA</label>
+            <input type="number" id="attr-alma" value="2" onchange="updateResources()">
         </div>
+    </div>
 
-        <h3>👤 TOKENS</h3>
-        <div class="card">
-            <input type="file" id="tk-img" accept="image/*">
-            <select id="tk-size">
-                <option value="token-small">Pequeno</option>
-                <option value="token-medium" selected>Médio</option>
-                <option value="token-large">Grande</option>
-            </select>
-            <input type="number" id="tk-hp" placeholder="HP Máximo" value="100">
-            <p style="font-size:9px; color:#555;">Duble clique para criar. Botão direito para apagar ou tirar HP.</p>
+    <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <span>PV: <b id="pv-val">15/15</b></span>
+            <span>MANA: <b id="mana-val">4/4</b></span>
+            <span>DEF: <b id="def-val">10</b></span>
         </div>
+        <div class="resource-bar"><div id="pv-bar" class="bar-fill" style="width:100%; background:var(--red);"></div></div>
+        <div class="resource-bar"><div id="mana-bar" class="bar-fill" style="width:100%; background:var(--neon);"></div></div>
+    </div>
 
-        <div id="log"></div>
-    </aside>
+    <div class="skills-container">
+        <h3>PERÍCIAS DE CORPO</h3>
+        <div id="skills-corpo"></div>
+        
+        <h3>PERÍCIAS DE MENTE</h3>
+        <div id="skills-mente"></div>
+
+        <h3>PERÍCIAS DE ALMA</h3>
+        <div id="skills-alma"></div>
+    </div>
+</aside>
+
+<main id="viewport">
+    <img id="map-img" src="">
+    <canvas id="fog"></canvas>
+</main>
+
+<aside style="border-right:none; border-left:1px solid rgba(0,242,255,0.1);">
+    <h3 style="font-family:'Orbitron'; font-size:12px; color:var(--neon);">LOG DE AÇÕES</h3>
+    <div id="log" class="log-box"></div>
+
+    <button class="action-btn" onclick="document.getElementById('map-upload').click()">CARREGAR MAPA</button>
+    <input type="file" id="map-upload" style="display:none" accept="image/*">
+    
+    <button class="action-btn" style="background:#333;" onclick="resetFog()">REPOR NÉVOA</button>
+    
+    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:5px;">
+        <small style="color:#666;">DICA: Use o mouse no mapa para revelar a área. O sistema calcula sucessos com base no d20[cite: 11].</small>
+    </div>
+</aside>
 
 <script>
-    const viewport = document.getElementById('viewport');
-    const canvas = document.getElementById('fog-canvas');
+    const log = document.getElementById('log');
+    const canvas = document.getElementById('fog');
     const ctx = canvas.getContext('2d');
-    const mapImg = document.getElementById('map-img');
-    let currentTokenURL = "";
-    let initiative = [];
-    let turnIndex = 0;
 
-    // --- MAPA ---
-    document.getElementById('map-in').onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            mapImg.src = URL.createObjectURL(file);
-            mapImg.onload = fitFogToMap;
-        }
+    // Listas de Perícias Baseadas nos PDFs 
+    const skillList = {
+        corpo: ["Luta", "Pontaria", "Acrobacia", "Atletismo", "Furtividade", "Resistência Física"],
+        mente: ["Investigação", "Medicina", "Persuasão", "Enganação", "Tecnologia", "Saber Conhecimento"],
+        alma: ["Manifestação de Poder", "Percepção", "Intuição", "Vontade", "Determinação"]
     };
 
-    function fitFogToMap() {
-        canvas.width = mapImg.clientWidth;
-        canvas.height = mapImg.clientHeight;
-        canvas.style.left = mapImg.offsetLeft + "px";
-        canvas.style.top = mapImg.offsetTop + "px";
-        resetFog();
+    function initSkills() {
+        for (let cat in skillList) {
+            const container = document.getElementById(`skills-${cat}`);
+            skillList[cat].forEach(s => {
+                container.innerHTML += `
+                    <div class="skill-row">
+                        <span>${s}</span>
+                        <div>
+                            <input type="number" value="0" style="width:30px; background:none; border:none; color:var(--neon); text-align:right;" id="skill-${s}">
+                            <button onclick="rollSkill('${s}', '${cat}')">D20</button>
+                        </div>
+                    </div>`;
+            });
+        }
     }
+
+    // Lógica de Recursos 
+    function updateResources() {
+        const corpo = parseInt(document.getElementById('attr-corpo').value) || 0;
+        const alma = parseInt(document.getElementById('attr-alma').value) || 0;
+        const acrobacia = parseInt(document.getElementById('skill-Acrobacia').value) || 0;
+
+        const maxPV = corpo + 10;
+        const maxMana = alma * 2;
+        const def = 10 + Math.floor(corpo/2) + acrobacia; // Modificador base simplificado
+
+        document.getElementById('pv-val').innerText = `${maxPV}/${maxPV}`;
+        document.getElementById('mana-val').innerText = `${maxMana}/${maxMana}`;
+        document.getElementById('def-val').innerText = def;
+    }
+
+    // Lógica de Rolagem d20 [cite: 11, 13, 14]
+    function rollSkill(name, attrType) {
+        const bonus = parseInt(document.getElementById(`skill-${name}`).value) || 0;
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const total = d20 + bonus;
+        
+        let msg = `<div class="log-entry"><b>${name.toUpperCase()}</b>: Rolou ${d20} + ${bonus} = <b>${total}</b>`;
+        if(d20 === 20) msg += ` <span class="critical">[CRÍTICO!]</span>`;
+        if(d20 === 1) msg += ` <span style="color:red">[FALHA!]</span>`;
+        msg += `</div>`;
+        
+        log.innerHTML = msg + log.innerHTML;
+    }
+
+    // Mapa e Névoa
+    document.getElementById('map-upload').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            document.getElementById('map-img').src = ev.target.result;
+            setTimeout(resetFog, 200);
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
 
     function resetFog() {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = '#050b14';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvas.width = document.getElementById('viewport').clientWidth;
+        canvas.height = document.getElementById('viewport').clientHeight;
+        ctx.fillStyle = "#050b14";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
     }
 
-    // --- FOG DRAW ---
-    let isDrawing = false;
-    canvas.onmousedown = (e) => { if(e.button === 0) isDrawing = true; };
-    window.onmouseup = () => isDrawing = false;
+    let drawing = false;
+    canvas.onmousedown = () => drawing = true;
+    window.onmouseup = () => drawing = false;
     canvas.onmousemove = (e) => {
-        if (!isDrawing) return;
+        if(!drawing) return;
         const rect = canvas.getBoundingClientRect();
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
-        ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 50, 0, Math.PI * 2);
+        ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 45, 0, Math.PI*2);
         ctx.fill();
-    };
-
-    // --- DICE SYSTEM ---
-    function rollDice(sides) {
-        const res = Math.floor(Math.random() * sides) + 1;
-        const log = document.getElementById('log');
-        log.innerHTML = `<div style="color:var(--accent)">> ROLOU D${sides}: <b>${res}</b></div>` + log.innerHTML;
     }
 
-    // --- TOKENS COM HP ---
-    document.getElementById('tk-img').onchange = (e) => {
-        if(e.target.files[0]) currentTokenURL = URL.createObjectURL(e.target.files[0]);
-    };
-
-    viewport.ondblclick = (e) => {
-        if(e.target !== canvas && e.target !== viewport) return;
-        const maxHP = document.getElementById('tk-hp').value || 100;
-        let currentHP = maxHP;
-
-        const t = document.createElement('div');
-        const size = document.getElementById('tk-size').value;
-        t.className = `token ${size}`;
-        if(currentTokenURL) t.style.backgroundImage = `url(${currentTokenURL})`;
-        else t.style.backgroundColor = 'var(--accent)';
-
-        // Barra de Vida
-        const hpCont = document.createElement('div');
-        hpCont.className = 'hp-bar-container';
-        const hpFill = document.createElement('div');
-        hpFill.className = 'hp-bar-fill';
-        hpCont.appendChild(hpFill);
-        t.appendChild(hpCont);
-
-        const rect = viewport.getBoundingClientRect();
-        t.style.left = (e.clientX - rect.left - 25) + 'px';
-        t.style.top = (e.clientY - rect.top - 25) + 'px';
-
-        // Lógica de Dano/Cura
-        t.oncontextmenu = (ev) => {
-            ev.preventDefault();
-            const dmg = prompt("Dano (-) ou Cura (+):", "-10");
-            if(dmg !== null) {
-                currentHP = Math.min(maxHP, currentHP + parseInt(dmg));
-                const perc = (currentHP / maxHP) * 100;
-                hpFill.style.width = perc + "%";
-                if(perc <= 0) t.style.filter = "grayscale(1) opacity(0.5)";
-                else t.style.filter = "none";
-            }
-        };
-
-        // Arrastar
-        t.onmousedown = (ev) => {
-            ev.stopPropagation();
-            if(ev.button !== 0) return;
-            const sX = ev.clientX - t.getBoundingClientRect().left;
-            const sY = ev.clientY - t.getBoundingClientRect().top;
-            function move(ev) {
-                t.style.left = (ev.clientX - rect.left - sX) + 'px';
-                t.style.top = (ev.clientY - rect.top - sY) + 'px';
-            }
-            document.onmousemove = move;
-            document.onmouseup = () => document.onmousemove = null;
-        };
-
-        viewport.appendChild(t);
-    };
-
-    // --- INICIATIVA ---
-    function addInitiative() {
-        const name = document.getElementById('init-name').value;
-        const val = parseInt(document.getElementById('init-val').value) || 0;
-        if(!name) return;
-        initiative.push({name, val});
-        initiative.sort((a,b) => b.val - a.val);
-        updateInitUI();
-    }
-
-    function updateInitUI() {
-        const list = document.getElementById('init-list');
-        list.innerHTML = '';
-        initiative.forEach((item, i) => {
-            const div = document.createElement('div');
-            div.className = `init-item ${i === turnIndex ? 'init-active' : ''}`;
-            div.innerHTML = `<span>#${item.val} ${item.name}</span> <span onclick="initiative.splice(${i},1);updateInitUI()" style="cursor:pointer;color:red">×</span>`;
-            list.appendChild(div);
-        });
-    }
-
-    function nextTurn() {
-        if(initiative.length === 0) return;
-        turnIndex = (turnIndex + 1) % initiative.length;
-        updateInitUI();
-        document.getElementById('log').innerHTML = `<div>> TURNO: ${initiative[turnIndex].name}</div>` + document.getElementById('log').innerHTML;
-    }
+    initSkills();
+    updateResources();
 </script>
+
 </body>
 </html>
