@@ -2,79 +2,192 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDO REALITAS ENGINE</title>
+    <title>NEXUS VTT // ORDO REALITAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #050505; --panel: #0a0a0a; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --mana: #009dff; --bg: #0f111a; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; }
         
-        /* Menu Lateral Estilizado */
-        #side-menu { width: 350px; background: var(--panel); border-right: 2px solid #1a1a1a; display: flex; flex-direction: column; z-index: 1000; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
-        .menu-inner { padding: 20px; overflow-y: auto; flex: 1; }
-        h2 { font-family: 'Orbitron'; font-size: 13px; color: var(--neon); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; border-left: 3px solid var(--neon); padding-left: 10px; }
-
-        /* Viewport e Mapa */
-        #viewport { flex: 1; position: relative; background: #000; overflow: auto; display: flex; justify-content: center; align-items: center; cursor: crosshair; }
-        #map-container { position: relative; line-height: 0; }
-        #map-img { display: block; user-select: none; -webkit-user-drag: none; }
-
-        /* TOKENS PROFISSIONAIS */
-        .token { 
-            position: absolute; display: flex; flex-direction: column; align-items: center; 
-            z-index: 100; cursor: grab; transition: transform 0.1s; 
+        /* Menu Lateral */
+        #side-menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); display: flex; flex-direction: column; z-index: 1000; padding: 15px; box-sizing: border-box; }
+        
+        /* Viewport com Grelha de Fundo */
+        #viewport { 
+            flex: 1; position: relative; overflow: auto; 
+            background-color: #111;
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 50px 50px;
+            display: flex; align-items: flex-start; justify-content: flex-start;
         }
-        .token:active { cursor: grabbing; }
+
+        #map-container { position: relative; min-width: 100%; min-height: 100%; }
+        #map-img { position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; }
+
+        /* TOKEN / OBJETO */
+        .token { 
+            position: absolute; z-index: 10; cursor: move; 
+            display: flex; flex-direction: column; align-items: center;
+            user-select: none;
+        }
         .token-art { 
             width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%;
-            background-size: cover; background-position: center; background-color: #111;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8); position: relative;
+            background-size: cover; background-position: center; background-color: #222;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
         
-        /* Estilo Objeto Interagível */
-        .token.object .token-art { border-radius: 8px; border-color: #ff9d00; border-style: dashed; }
+        /* Estilo para Objetos/Pistas */
+        .token.object .token-art { border-radius: 5px; border-color: #ffaa00; border-style: solid; }
         .token.object .bars { display: none; }
 
-        .token-label { 
-            margin-top: 5px; font-family: 'Orbitron'; font-size: 10px; font-weight: bold;
-            text-shadow: 2px 2px 4px #000; color: #fff; white-space: nowrap;
-        }
-
-        /* BARRAS DE STATUS */
-        .bars { width: 100%; height: 10px; margin-top: 4px; pointer-events: none; }
-        .bar { height: 4px; background: #222; border-radius: 2px; margin-bottom: 2px; overflow: hidden; }
-        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
-        .mp-fill { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
-
-        /* INTERFACE DE CONTROLE */
-        .control-group { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #222; }
-        .btn { 
-            background: transparent; border: 1px solid var(--neon); color: var(--neon); 
-            padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
-            font-size: 9px; margin-bottom: 8px; transition: 0.2s; text-transform: uppercase;
-        }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
-        .btn-del { border-color: var(--red); color: var(--red); }
-        .btn-del:hover { background: var(--red); color: #fff; }
-
-        label { font-size: 11px; color: #666; display: block; margin-bottom: 5px; font-family: 'Orbitron'; }
-        .input-dark { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 4px; }
+        .token-name { font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; text-shadow: 2px 2px 2px #000; text-align: center; width: 120px; }
         
-        /* Slider de Tamanho */
-        .range-styled { width: 100%; margin: 10px 0; accent-color: var(--neon); }
+        /* Barras de Vida/Mana */
+        .bars { width: 80px; height: 10px; margin-top: 4px; }
+        .bar { height: 4px; background: #000; border-radius: 2px; margin-bottom: 2px; overflow: hidden; border: 1px solid #333; }
+        .hp-f { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
+        .mp-f { background: var(--mana); height: 100%; width: 100%; transition: 0.3s; }
+
+        /* UI */
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; margin-top: 10px; transition: 0.2s; }
+        .btn:hover { background: var(--neon); color: #000; }
+        .input-dark { background: #111; border: 1px solid #333; color: #fff; padding: 8px; width: 100%; margin-top: 5px; border-radius: 4px; box-sizing: border-box; }
+        label { font-size: 10px; color: #666; font-family: 'Orbitron'; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
 
 <div id="side-menu">
-    <div class="menu-inner">
-        <h2>Painel do Mestre</h2>
-        <button class="btn" onclick="document.getElementById('map-load').click()">🖼️ Mudar Mapa</button>
-        <input type="file" id="map-load" style="display:none" onchange="updateMap(this)">
+    <h2 style="font-family:'Orbitron'; font-size: 14px; color: var(--neon);">NEXUS VTT // ORDO</h2>
+    
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+    <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
+    
+    <div style="display:flex; gap:5px;">
+        <button class="btn" onclick="createToken('hero')">👤 HERÓI</button>
+        <button class="btn" onclick="createToken('object')">📄 OBJETO</button>
+    </div>
+
+    <div id="edit-box" style="display:none; margin-top:20px; border-top: 1px solid #222; padding-top: 15px;">
+        <label>NOME:</label>
+        <input type="text" id="ed-name" class="input-dark" oninput="apply()">
         
-        <div style="display:flex; gap:10px;">
-            <button class="btn" onclick="spawn('hero')">👤 Herói</button>
-            <button class="btn" onclick="spawn('object')">📦 Objeto</button>
+        <label>TAMANHO (PIXELS):</label>
+        <input type="range" id="ed-size" min="40" max="400" value="80" style="width:100%" oninput="apply()">
+        
+        <div id="stats-ui">
+            <label>VIDA (PV %):</label>
+            <input type="range" id="ed-hp" min="0" max="100" value="100" style="width:100%" oninput="apply()">
+            <label>MANA (%):</label>
+            <input type="range" id="ed-mp" min="0" max="100" value="100" style="width:100%" oninput="apply()">
         </div>
 
-        <div id="edit-panel" style="display:none; margin-top:10px;">
-            <h2>Configurar Seleção</h2>
+        <button class="btn" onclick="document.getElementById('img-in').click()">📷 MUDAR IMAGEM</button>
+        <input type="file" id="img-in" style="display:none" onchange="changeImg(this)">
+        
+        <button class="btn" style="border-color:var(--red); color:var(--red)" onclick="deleteActive()">ELIMINAR</button>
+    </div>
+</div>
+
+<div id="viewport">
+    <div id="map-container" id="drop-zone">
+        <img id="map-img" src="">
+        </div>
+</div>
+
+<script>
+    let activeTk = null;
+    let zIndexCounter = 100;
+
+    function loadMap(input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('map-img');
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function createToken(type) {
+        const t = document.createElement('div');
+        t.className = `token ${type === 'object' ? 'object' : ''}`;
+        t.style.left = "100px";
+        t.style.top = "100px";
+        t.style.zIndex = zIndexCounter++;
+        
+        t.innerHTML = `
+            <div class="token-art"></div>
+            <div class="token-name">${type === 'hero' ? 'Novo Herói' : 'Objeto'}</div>
+            <div class="bars">
+                <div class="bar"><div class="hp-f"></div></div>
+                <div class="bar"><div class="mp-f"></div></div>
+            </div>
+        `;
+
+        // Armazenar dados no elemento
+        t.dataset.type = type;
+        t.dataset.hp = 100;
+        t.dataset.mp = 100;
+        t.dataset.size = 80;
+
+        t.onmousedown = function(e) {
+            select(t);
+            if (e.button !== 0) return;
+            
+            t.style.zIndex = zIndexCounter++;
+            let sx = e.clientX - t.getBoundingClientRect().left;
+            let sy = e.clientY - t.getBoundingClientRect().top;
+
+            function move(ev) {
+                const rect = document.getElementById('map-container').getBoundingClientRect();
+                t.style.left = (ev.pageX - rect.left - sx) + 'px';
+                t.style.top = (ev.pageY - rect.top - sy) + 'px';
+            }
+
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+
+        document.getElementById('map-container').appendChild(t);
+        select(t);
+    }
+
+    function select(t) {
+        activeTk = t;
+        document.getElementById('edit-box').style.display = 'block';
+        document.getElementById('stats-ui').style.display = t.dataset.type === 'object' ? 'none' : 'block';
+        
+        // Sincronizar UI
+        document.getElementById('ed-name').value = t.querySelector('.token-name').innerText;
+        document.getElementById('ed-size').value = t.dataset.size;
+        document.getElementById('ed-hp').value = t.dataset.hp;
+        document.getElementById('ed-mp').value = t.dataset.mp;
+
+        // Visual de Selecionado
+        document.querySelectorAll('.token-art').forEach(a => a.style.borderColor = '');
+        t.querySelector('.token-art').style.borderColor = '#fff';
+    }
+
+    function apply() {
+        if(!activeTk) return;
+        const art = activeTk.querySelector('.token-art');
+        const size = document.getElementById('ed-size').value;
+        
+        activeTk.dataset.size = size;
+        activeTk.dataset.hp = document.getElementById('ed-hp').value;
+        activeTk.dataset.mp = document.getElementById('ed-mp').value;
+        
+        art.style.width = size + "px";
+        art.style.height = size + "px";
+        activeTk.querySelector('.token-name').innerText = document.getElementById('ed-name').value;
+        activeTk.querySelector('.token-name').style.width = (parseInt(size) + 40) + "px";
+        activeTk.querySelector('.bars').style.width = size + "px";
+        
+        activeTk.querySelector('.hp-f').style.width = activeTk.dataset.hp + "%";
+        activeTk.querySelector('.mp-f').style.width = activeTk.dataset.mp + "%";
+    }
+
+    function changeImg(input) {
+        if(!activeTk) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            activeTk.querySelector('.token
