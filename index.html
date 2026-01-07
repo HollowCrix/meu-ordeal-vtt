@@ -3,54 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS VTT // CUSTOM TOKENS</title>
+    <title>NEXUS VTT // ORDEAL RPG</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --bg: #010409; --panel: #0d1117; --accent: #7000ff; }
+        :root { --neon: #00f2ff; --accent: #7000ff; --bg: #02050a; --panel: #0d1117; --red: #ff4a4a; }
+        * { box-sizing: border-box; }
         body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        header { background: #000; border-bottom: 1px solid var(--neon); padding: 10px; display: flex; justify-content: space-between; }
-        .nav-tabs { display: flex; gap: 8px; }
-        .tab-btn { background: #111; border: 1px solid #333; color: #888; padding: 6px 12px; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; border-radius: 4px; }
-        .tab-btn.active { border-color: var(--neon); color: var(--neon); }
+        /* Cabeçalho */
+        header { background: #000; border-bottom: 1px solid var(--neon); padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .nav-tabs { display: flex; gap: 10px; }
+        .tab-btn { background: #1a1a1a; border: 1px solid #333; color: #888; padding: 8px 15px; cursor: pointer; font-family: 'Orbitron'; font-size: 11px; border-radius: 4px; }
+        .tab-btn.active { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 10px rgba(0,242,255,0.3); }
 
         main { flex: 1; position: relative; overflow: hidden; }
-        .tab-content { display: none; height: 100%; width: 100%; }
+        .tab-content { display: none; height: 100%; width: 100%; overflow: hidden; }
         .tab-content.active { display: flex; }
 
-        /* Estilo da Ficha - Baseada no Compêndio Ordeal */
-        #fichas { padding: 20px; overflow-y: auto; display: none; flex-wrap: wrap; gap: 20px; align-content: flex-start; }
-        .char-card { background: var(--panel); border: 1px solid #222; border-radius: 12px; padding: 15px; width: 320px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .char-header { display: flex; gap: 10px; margin-bottom: 15px; }
-        .char-portrait { width: 70px; height: 70px; background: #222; border: 2px solid var(--neon); border-radius: 8px; background-size: cover; background-position: center; flex-shrink: 0; cursor: pointer; }
+        /* Aba de Fichas */
+        #fichas { padding: 20px; overflow-y: auto; flex-wrap: wrap; gap: 20px; justify-content: center; align-content: flex-start; }
+        .char-card { background: var(--panel); border: 1px solid #333; border-radius: 12px; padding: 15px; width: 320px; box-shadow: 0 5px 20px #000; position: relative; }
+        .pilar-input { width: 45px; background: #000; border: 1px solid var(--neon); color: #fff; text-align: center; font-size: 16px; border-radius: 4px; padding: 3px; }
         
-        /* Controles de Formato do Token na Ficha */
-        .token-setup { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin: 10px 0; font-size: 11px; }
-        .token-setup select { width: 100%; background: #000; color: #fff; border: 1px solid #444; margin-top: 4px; }
+        /* Area do Mapa */
+        #game { position: relative; }
+        #vp { flex: 1; background: #000; position: relative; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; }
+        #map-display { max-width: 100%; max-height: 100%; pointer-events: none; }
+        #fog-canvas { position: absolute; top: 0; left: 0; z-index: 10; cursor: crosshair; }
 
-        /* Área do Mapa */
-        #vp { flex: 1; background: #000; position: relative; overflow: hidden; touch-action: none; }
-        #map-display { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-        #fog-canvas { position: absolute; top:0; left:0; z-index: 10; opacity: 0.8; }
-
-        /* TOKENS CUSTOMIZADOS NO MAPA */
-        .token { position: absolute; border: 2px solid var(--neon); background-size: cover; background-position: center; z-index: 100; box-shadow: 0 0 15px #000; cursor: move; }
-        /* Classes de Formato */
+        /* Estilos dos Tokens */
+        .token { position: absolute; border: 2px solid var(--neon); background-size: cover; background-position: center; z-index: 100; cursor: move; box-shadow: 0 0 10px #000; }
         .shape-circle { border-radius: 50%; }
         .shape-square { border-radius: 0%; }
-        .shape-rounded { border-radius: 15%; }
-        /* Classes de Tamanho */
-        .size-p { width: 40px; height: 40px; }
-        .size-m { width: 65px; height: 65px; }
-        .size-g { width: 100px; height: 100px; }
+        .shape-rounded { border-radius: 15px; }
+        .token-name { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
 
-        .btn-action { background: var(--neon); color: #000; border: none; padding: 8px; border-radius: 4px; font-weight: bold; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 10px; margin-top: 10px; }
+        /* Controles do Mapa */
+        .map-ui { position: absolute; right: 15px; top: 15px; z-index: 50; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        
+        button.primary { background: var(--neon); color: #000; border: none; padding: 10px; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-family:'Orbitron'; color:var(--neon); font-size:14px;">NEXUS CORE // ORDEAL</div>
+    <div style="font-family:'Orbitron'; color:var(--neon); letter-spacing:1px;">NEXUS VTT // ORDEAL</div>
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('fichas', this)">FICHAS</button>
         <button class="tab-btn" onclick="switchTab('game', this)">MAPA</button>
@@ -59,25 +56,29 @@
 
 <main>
     <div id="fichas" class="tab-content active">
-        <div style="width:100%"><button class="btn-action" style="width:200px" onclick="addChar()">+ NOVO PERSONAGEM</button></div>
-        <div id="char-list" style="display:contents"></div>
+        <div style="width:100%; text-align:center; margin-bottom:10px;">
+            <button class="primary" onclick="addCharacter()">+ CRIAR NOVO PERSONAGEM</button>
+        </div>
+        <div id="char-list" style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center;"></div>
     </div>
 
     <div id="game" class="tab-content">
         <div id="vp">
             <img id="map-display" src="">
             <canvas id="fog-canvas"></canvas>
-            <div style="position:absolute; right:10px; top:10px; z-index:20; display:flex; flex-direction:column; gap:5px;">
+            
+            <div class="map-ui">
                 <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
-                <button class="tab-btn" onclick="document.getElementById('map-in').click()">SUBIR MAPA</button>
-                <button class="tab-btn" onclick="clearFog()">REVELAR TUDO</button>
+                <button class="tab-btn" onclick="document.getElementById('map-in').click()">🖼️ MUDAR MAPA</button>
+                <button class="tab-btn" onclick="resetFog()">☁️ REPOR NÉVOA</button>
+                <button class="tab-btn" onclick="clearFog()">🚫 SEM NÉVOA</button>
             </div>
         </div>
     </div>
 </main>
 
 <script>
-    let chars = [];
+    let characters = [];
     const vp = document.getElementById('vp');
     const canvas = document.getElementById('fog-canvas');
     const ctx = canvas.getContext('2d');
@@ -87,107 +88,32 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         btn.classList.add('active');
-        if(id === 'game') setTimeout(resizeCanvas, 100);
+        if(id === 'game') setTimeout(resizeCanvas, 150);
     }
 
-    function addChar() {
-        const c = { id: Date.now(), name: "Herói", corpo: 5, mente: 3, alma: 2, img: "", shape: "shape-circle", size: "size-m" };
-        chars.push(c);
-        render();
+    // Gerenciamento de Fichas
+    function addCharacter() {
+        const char = {
+            id: Date.now(),
+            name: "Novo Herói",
+            corpo: 5, mente: 3, alma: 2,
+            shape: 'shape-circle',
+            size: 60,
+            img: ""
+        };
+        characters.push(char);
+        renderCharacters();
     }
 
-    function render() {
+    function renderCharacters() {
         const list = document.getElementById('char-list');
         list.innerHTML = '';
-        chars.forEach(c => {
+        characters.forEach(c => {
+            const pv = parseInt(c.corpo) + 10;
+            const mana = parseInt(c.alma) * 2;
+            const def = 10 + Math.floor(c.corpo/2);
+
             const card = document.createElement('div');
             card.className = 'char-card';
             card.innerHTML = `
-                <div class="char-header">
-                    <div class="char-portrait" id="port-${c.id}" style="background-image:url(${c.img})" onclick="pickImg(${c.id})"></div>
-                    <div style="flex:1">
-                        <input type="text" value="${c.name}" onchange="update(${c.id},'name',this.value)" style="background:none; border:none; color:var(--neon); font-size:18px; width:100%">
-                        <div style="display:flex; gap:5px; margin-top:5px">
-                            <input type="number" value="${c.corpo}" onchange="update(${c.id},'corpo',this.value)" style="width:30px; background:#000; color:#fff; border:1px solid #444">
-                            <input type="number" value="${c.mente}" onchange="update(${c.id},'mente',this.value)" style="width:30px; background:#000; color:#fff; border:1px solid #444">
-                            <input type="number" value="${c.alma}" onchange="update(${c.id},'alma',this.value)" style="width:30px; background:#000; color:#fff; border:1px solid #444">
-                        </div>
-                    </div>
-                </div>
-                <div class="token-setup">
-                    CONFIGURAR TOKEN:<br>
-                    Formato: <select onchange="update(${c.id},'shape',this.value)">
-                        <option value="shape-circle" ${c.shape=='shape-circle'?'selected':''}>Círculo (Cortado)</option>
-                        <option value="shape-square" ${c.shape=='shape-square'?'selected':''}>Quadrado (Arte Cheia)</option>
-                        <option value="shape-rounded" ${c.shape=='shape-rounded'?'selected':''}>Arredondado</option>
-                    </select>
-                    Tamanho: <select onchange="update(${c.id},'size',this.value)">
-                        <option value="size-p" ${c.size=='size-p'?'selected':''}>Pequeno (1x1)</option>
-                        <option value="size-m" ${c.size=='size-m'?'selected':''}>Médio (2x2)</option>
-                        <option value="size-g" ${c.size=='size-g'?'selected':''}>Grande (3x3)</option>
-                    </select>
-                </div>
-                <button class="btn-action" onclick="spawn(${c.id})">ENVIAR PARA O MAPA</button>
-                <button onclick="removeChar(${c.id})" style="position:absolute; top:5px; right:5px; background:none; border:none; color:red; cursor:pointer">×</button>
-            `;
-            list.appendChild(card);
-        });
-    }
-
-    function update(id, field, val) { const c = chars.find(x => x.id == id); c[field] = val; render(); }
-    function removeChar(id) { chars = chars.filter(x => x.id != id); render(); }
-
-    function pickImg(id) {
-        const inp = document.createElement('input'); inp.type='file';
-        inp.onchange = (e) => {
-            const rd = new FileReader();
-            rd.onload = (ev) => { update(id, 'img', ev.target.result); };
-            rd.readAsDataURL(e.target.files[0]);
-        };
-        inp.click();
-    }
-
-    function spawn(id) {
-        const c = chars.find(x => x.id == id);
-        const t = document.createElement('div');
-        // AQUI APLICA O FORMATO E TAMANHO QUE VOCÊ ESCOLHEU
-        t.className = `token ${c.shape} ${c.size}`;
-        if(c.img) t.style.backgroundImage = `url(${c.img})`;
-        else t.style.backgroundColor = 'var(--accent)';
-
-        t.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            const move = (ev) => {
-                const rect = vp.getBoundingClientRect();
-                t.style.left = (ev.clientX - rect.left - 30) + 'px';
-                t.style.top = (ev.clientY - rect.top - 30) + 'px';
-            };
-            document.onmousemove = move;
-            document.onmouseup = () => document.onmousemove = null;
-        });
-        
-        t.oncontextmenu = (e) => { e.preventDefault(); t.remove(); };
-        vp.appendChild(t);
-        switchTab('game', document.querySelectorAll('.tab-btn')[1]);
-    }
-
-    // Mapa e Névoa
-    function loadMap(i) {
-        const rd = new FileReader();
-        rd.onload = (e) => { document.getElementById('map-display').src = e.target.result; setTimeout(resizeCanvas, 200); };
-        rd.readAsDataURL(i.files[0]);
-    }
-    function resizeCanvas() { canvas.width = vp.clientWidth; canvas.height = vp.clientHeight; resetFog(); }
-    function resetFog() { ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#050b14'; ctx.fillRect(0,0,canvas.width,canvas.height); }
-    function clearFog() { ctx.clearRect(0,0,canvas.width,canvas.height); }
-
-    canvas.addEventListener('mousemove', (e) => {
-        if(e.buttons > 0) {
-            const r = canvas.getBoundingClientRect();
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath(); ctx.arc(e.clientX-r.left, e.clientY-r.top, 40, 0, Math.PI*2); ctx.fill();
-        }
-    });
-</script>
-</body>
-</html>
+                <div style="display:flex; gap:
