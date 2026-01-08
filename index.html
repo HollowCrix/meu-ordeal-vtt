@@ -2,14 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // OMNI ORDO</title>
+    <title>NEXUS VTT // ORDO CORE STABLE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; --bg: #050506; }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; --purple: #a020f0; --bg: #050506; }
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
 
-        /* INTERFACE LATERAL */
+        /* INTERFACE */
         #sidebar { 
             width: 320px; background: rgba(10,10,12,0.98); border-right: 1px solid var(--neon); 
             padding: 20px; z-index: 1000; overflow-y: auto; box-shadow: 10px 0 30px #000;
@@ -19,252 +19,46 @@
 
         /* VIEWPORT */
         #viewport { flex: 1; position: relative; background: #0c0c0c; overflow: auto; display: flex; align-items: center; justify-content: center; }
-        #map-area { position: relative; box-shadow: 0 0 50px #000; }
+        #map-area { position: relative; }
         #map-img { display: block; }
 
-        /* TOKENS (CORPO INTEIRO / RECORTE) */
-        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        /* TOKENS - FORMATO LIVRE */
+        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; pointer-events: auto; }
         .tk-art { 
             width: 100px; height: 100px; 
             background-size: contain; background-repeat: no-repeat; background-position: center bottom;
             transition: filter 0.3s, transform 0.2s;
+            position: relative;
         }
-        .selected .tk-art { filter: drop-shadow(0 0 10px var(--neon)) !important; }
+        
+        /* ESTADOS VITAIS CORRIGIDOS */
+        .selected .tk-art { filter: drop-shadow(0 0 10px var(--neon)); }
+        
+        /* Pulso de Ferido */
+        .state-injured { animation: pulseRed 1.2s infinite !important; }
+        @keyframes pulseRed { 0%, 100% { filter: drop-shadow(0 0 2px var(--red)) sepia(0.3); } 50% { filter: drop-shadow(0 0 15px var(--red)) sepia(0.5); } }
 
-        /* ESTADOS VITAIS */
-        .state-injured { animation: pulseRed 1.2s infinite; filter: drop-shadow(0 0 5px var(--red)) !important; }
-        .state-dead { filter: grayscale(1) brightness(0.3) contrast(1.2) !important; opacity: 0.8; }
-        .state-dead::after { content: '✕'; position: absolute; color: var(--red); font-size: 40px; top: 20%; font-family: 'Orbitron'; }
+        /* Estado Morto */
+        .state-dead { filter: grayscale(1) brightness(0.2) !important; }
+        .state-dead::before { content: '❌'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; z-index: 101; filter: none !important; }
 
-        @keyframes pulseRed { 0%, 100% { filter: drop-shadow(0 0 2px var(--red)); } 50% { filter: drop-shadow(0 0 15px var(--red)); } }
+        /* Aura de Insanidade */
+        .state-insane { filter: drop-shadow(0 0 12px var(--purple)) hue-rotate(280deg) !important; }
 
-        /* UI DO TOKEN */
-        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 3px; border: 0.5px solid #333; }
-        .hp-ui { width: 100%; margin-top: 4px; }
-        .hp-text { font-size: 10px; color: var(--neon); text-align: center; font-weight: bold; margin-bottom: 2px; }
-        .hp-box { height: 4px; background: #000; border: 1px solid #333; border-radius: 2px; overflow: hidden; }
+        /* UI DO TOKEN FLUTUANTE */
+        .tk-ui-top { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 5px; }
+        .hp-text { font-size: 10px; color: var(--neon); font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        .hp-box { width: 100%; height: 5px; background: rgba(0,0,0,0.8); border: 1px solid #333; border-radius: 2px; overflow: hidden; }
         .hp-bar { height: 100%; background: var(--red); width: 100%; transition: width 0.4s; }
 
-        /* FOG (SOMBRA AJUSTÁVEL) */
-        .fog { position: absolute; background: rgba(0,0,0,0.97); border: 1px dashed #222; z-index: 50; cursor: move; }
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; background: rgba(0,0,0,0.8); padding: 2px 8px; border: 1px solid #444; color: #fff; }
+
+        /* FOG */
+        .fog { position: absolute; background: rgba(0,0,0,0.97); border: 1px dashed #333; z-index: 50; cursor: move; }
         .fog.selected { border: 1px solid var(--neon); background: rgba(0,0,0,0.85); }
 
         /* BOTÕES E INPUTS */
-        .btn { 
-            background: #000; border: 1px solid var(--neon); color: var(--neon); 
-            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
-            font-size: 9px; margin-bottom: 6px; text-transform: uppercase; transition: 0.2s;
-        }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 15px var(--neon); }
-        .edit-panel { background: rgba(20,20,25,0.8); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; border: 1px solid #333; }
-        
-        label { font-size: 9px; color: #666; display: block; margin-top: 10px; text-transform: uppercase; }
-        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 7px; margin-top: 4px; font-family: 'Rajdhani'; }
-        input[type="range"] { accent-color: var(--neon); cursor: pointer; }
-    </style>
-</head>
-<body>
-
-<div id="sidebar">
-    <div class="brand">NEXUS // OMNI CORE</div>
-    
-    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ Carregar Mapa</button>
-    <input type="file" id="map-in" style="display:none" onchange="uploadMap(this)">
-    
-    <div class="section-title">Criação</div>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-        <button class="btn" onclick="spawn('hero')">👤 Personagem</button>
-        <button class="btn" onclick="spawn('pista')">📄 Pista</button>
-    </div>
-    <button class="btn" onclick="addFog()">🌑 Nova Sombra</button>
-
-    <div id="edit-panel" class="edit-panel">
-        <h3 id="edit-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0; font-family:'Orbitron'">SISTEMA DE CONFIGURAÇÃO</h3>
-        
-        <label>Nome / Identificação:</label>
-        <input type="text" id="in-name" oninput="sync()">
-
-        <div id="fog-controls" style="display:none">
-            <label>Largura:</label>
-            <input type="range" id="fog-w" min="20" max="1200" oninput="syncFog()">
-            <label>Altura:</label>
-            <input type="range" id="fog-h" min="20" max="1200" oninput="syncFog()">
-        </div>
-
-        <div id="hero-controls">
-            <label>Escala do Token:</label>
-            <input type="range" id="in-scale" min="30" max="800" oninput="sync()">
-            
-            <label>Pontos de Vida (Atual / Máx):</label>
-            <div style="display:flex; gap:5px">
-                <input type="number" id="in-cur" oninput="sync()">
-                <input type="number" id="in-max" oninput="sync()">
-            </div>
-            
-            <label>Lado (Flip):</label>
-            <button class="btn" style="margin-top:5px;" onclick="flip()">Inverter Lado ↔️</button>
-
-            <label>Estado Vital:</label>
-            <select id="in-state" onchange="sync()">
-                <option value="normal">ATIVO / NORMAL</option>
-                <option value="injured">MORRENDO (PULSO)</option>
-                <option value="dead">MORTO / K.O.</option>
-            </select>
-        </div>
-
-        <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('img-in').click()">📷 Carregar Imagem</button>
-        <input type="file" id="img-in" style="display:none" onchange="uploadArt(this)">
-        
-        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:10px;" onclick="del()">🗑️ Eliminar</button>
-    </div>
-
-    <div class="section-title">Terminal de Dados</div>
-    <button class="btn" onclick="roll(20)">Rolar D20</button>
-    <div id="dice-log" style="font-size:11px; color:#555; margin-top:10px; height:80px; overflow-y:auto; font-family:monospace; background:rgba(0,0,0,0.3); padding:8px; border:1px solid #111;"></div>
-</div>
-
-<div id="viewport">
-    <div id="map-area">
-        <img id="map-img" src="">
-    </div>
-</div>
-
-<script>
-    let active = null;
-    let z = 100;
-
-    function uploadMap(i) {
-        if(i.files[0]) {
-            let r = new FileReader();
-            r.onload = e => document.getElementById('map-img').src = e.target.result;
-            r.readAsDataURL(i.files[0]);
-        }
-    }
-
-    function spawn(type) {
-        const t = document.createElement('div');
-        t.className = 'token';
-        t.style.left = '150px'; t.style.top = '150px'; t.style.zIndex = z++;
-        t.innerHTML = `
-            <div class="hp-ui"><div class="hp-text">20/20</div><div class="hp-box"><div class="hp-bar"></div></div></div>
-            <div class="tk-art"></div>
-            <div class="tk-name">Novo</div>`;
-        
-        t.dataset.scale = type === 'pista' ? 120 : 80;
-        t.dataset.cur = 20; t.dataset.max = 20;
-        t.dataset.flip = 1; t.dataset.type = type;
-
-        t.onmousedown = function(e) {
-            select(t);
-            if(e.button !== 0) return;
-            let sx = e.clientX - t.getBoundingClientRect().left;
-            let sy = e.clientY - t.getBoundingClientRect().top;
-            function move(ev) {
-                const rect = document.getElementById('map-area').getBoundingClientRect();
-                t.style.left = (ev.pageX - rect.left - sx) + 'px';
-                t.style.top = (ev.pageY - rect.top - sy) + 'px';
-            }
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => { document.removeEventListener('mousemove', move); };
-        };
-        document.getElementById('map-area').appendChild(t);
-        select(t); sync();
-    }
-
-    function addFog() {
-        const f = document.createElement('div');
-        f.className = 'fog'; f.style.width = '200px'; f.style.height = '200px';
-        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 50;
-        f.onmousedown = function(e) {
-            select(f);
-            let sx = e.clientX - f.getBoundingClientRect().left;
-            let sy = e.clientY - f.getBoundingClientRect().top;
-            function move(ev) {
-                const rect = document.getElementById('map-area').getBoundingClientRect();
-                f.style.left = (ev.pageX - rect.left - sx) + 'px';
-                f.style.top = (ev.pageY - rect.top - sy) + 'px';
-            }
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => document.removeEventListener('mousemove', move);
-        };
-        document.getElementById('map-area').appendChild(f);
-        select(f);
-    }
-
-    function select(el) {
-        active = el;
-        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
-        el.classList.add('selected');
-        el.style.zIndex = z++;
-        document.getElementById('edit-panel').style.display = 'block';
-        
-        const isFog = el.classList.contains('fog');
-        document.getElementById('hero-controls').style.display = isFog ? 'none' : 'block';
-        document.getElementById('fog-controls').style.display = isFog ? 'block' : 'none';
-        
-        if(!isFog) {
-            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
-            document.getElementById('in-scale').value = el.dataset.scale;
-            document.getElementById('in-cur').value = el.dataset.cur;
-            document.getElementById('in-max').value = el.dataset.max;
-            document.getElementById('in-state').value = el.dataset.state || 'normal';
-        } else {
-            document.getElementById('in-name').value = "Sombra";
-            document.getElementById('fog-w').value = parseInt(el.style.width);
-            document.getElementById('fog-h').value = parseInt(el.style.height);
-        }
-    }
-
-    function sync() {
-        if(!active || active.classList.contains('fog')) return;
-        const s = document.getElementById('in-scale').value;
-        active.dataset.scale = s;
-        active.dataset.cur = document.getElementById('in-cur').value;
-        active.dataset.max = document.getElementById('in-max').value;
-        active.dataset.state = document.getElementById('in-state').value;
-        
-        const art = active.querySelector('.tk-art');
-        art.style.width = s + 'px'; 
-        art.style.height = (active.dataset.type === 'pista' ? s*1.4 : s) + 'px';
-        art.style.transform = `scaleX(${active.dataset.flip})`;
-        
-        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        
-        if(active.dataset.type === 'hero') {
-            active.querySelector('.hp-ui').style.display = 'block';
-            active.querySelector('.hp-text').innerText = `${active.dataset.cur}/${active.dataset.max}`;
-            active.querySelector('.hp-bar').style.width = (active.dataset.cur / active.dataset.max * 100) + '%';
-        } else {
-            active.querySelector('.hp-ui').style.display = 'none';
-        }
-        
-        art.className = 'tk-art state-' + active.dataset.state;
-    }
-
-    function syncFog() {
-        if(active && active.classList.contains('fog')) {
-            active.style.width = document.getElementById('fog-w').value + 'px';
-            active.style.height = document.getElementById('fog-h').value + 'px';
-        }
-    }
-
-    function flip() { if(active) { active.dataset.flip *= -1; sync(); } }
-
-    function uploadArt(input) {
-        if (input.files[0] && active) {
-            let r = new FileReader();
-            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
-            r.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function del() { active.remove(); document.getElementById('edit-panel').style.display='none'; }
-
-    function roll(f) {
-        const v = Math.floor(Math.random() * f) + 1;
-        const log = document.getElementById('dice-log');
-        log.innerHTML = `<div>> d${f}: <b style="color:white">${v}</b></div>` + log.innerHTML;
-    }
-</script>
-</body>
-</html>
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; text-transform: uppercase; }
+        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
+        .edit-panel { background: rgba(20,20,25,0.9); padding: 12px; border-radius: 4px; display: none; margin-top: 10px; border: 1px solid #333; }
+        label { font-size: 9px; color: #666; display: block; margin-top: 1
