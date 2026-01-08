@@ -2,78 +2,90 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // CONTROL FOG</title>
+    <title>NEXUS VTT // ORDO REALITAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --bg: #050505; }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --gray: #555; --bg: #050505; }
         body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
         
         #menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 15px; z-index: 1000; overflow-y: auto; }
-        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); letter-spacing: 2px; border-bottom: 1px solid #222; margin-top: 15px; text-transform: uppercase;}
+        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); border-bottom: 1px solid #222; margin-top: 15px; text-transform: uppercase; padding-bottom: 5px;}
 
         #viewport { flex: 1; position: relative; background: #111; overflow: auto; }
         #map-wrapper { position: relative; display: inline-block; }
         #map-img { display: block; }
 
-        /* FOG OF WAR AJUSTÁVEL */
-        .fog { 
-            position: absolute; background: rgba(0,0,0,0.92); border: 1px dashed #444; 
-            z-index: 500; cursor: move; display: flex; align-items: center; 
-            justify-content: center; color: #444; font-size: 10px; overflow: hidden;
-        }
-        .fog.selected { border: 2px solid var(--neon); background: rgba(0,0,0,0.8); color: var(--neon); }
+        /* FOG */
+        .fog { position: absolute; background: rgba(0,0,0,0.92); border: 1px dashed #444; z-index: 500; cursor: move; display: flex; align-items: center; justify-content: center; color: #444; font-size: 10px; }
 
         /* TOKENS */
-        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
-        .tk-art { width: 60px; height: 60px; border: 2px solid var(--neon); border-radius: 50%; background-size: cover; background-position: center; background-color: #222; }
-        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
-        .tk-val { font-size: 11px; color: var(--neon); font-weight: bold; margin-bottom: 2px; }
+        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; transition: opacity 0.3s; }
+        .tk-art { width: 60px; height: 60px; border: 2px solid var(--neon); border-radius: 50%; background-size: cover; background-position: center; background-color: #222; position: relative; }
         
-        .bar-bg { width: 60px; height: 4px; background: #000; border: 1px solid #333; margin-top: 2px; }
+        /* ESTADOS */
+        .state-desmaiado { filter: grayscale(1) sepia(1) hue-rotate(180deg); opacity: 0.7; }
+        .state-morto { filter: grayscale(1) brightness(0.3); }
+        .state-morto::after { content: '❌'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; }
+
+        /* DOCUMENTOS / PISTAS */
+        .token.pista .tk-art { border-radius: 4px; border-color: #f1c40f; border-style: solid; width: 100px; height: 140px; }
+        .token.pista .tk-bars, .token.pista .tk-val { display: none; }
+
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
+        .tk-val { font-size: 11px; color: var(--neon); font-weight: bold; }
+        .bar-bg { width: 100%; height: 4px; background: #000; border: 1px solid #333; margin-top: 2px; }
         .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
 
         .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; }
         .btn:hover { background: var(--neon); color: #000; }
         
         .panel-edit { background: #111; padding: 12px; border-radius: 5px; margin-top: 10px; display: none; border: 1px solid #333; }
-        label { font-size: 9px; color: #777; display: block; margin-bottom: 2px; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-bottom: 8px; }
+        label { font-size: 9px; color: #777; display: block; margin-top: 8px; text-transform: uppercase; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-top: 2px; }
     </style>
 </head>
 <body>
 
 <div id="menu">
     <h2>Cenário</h2>
-    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ MAPA</button>
     <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
-    <button class="btn" style="border-color: #fff; color: #fff;" onclick="spawnFog()">🌑 NOVA SOMBRA (FOG)</button>
+    <button class="btn" onclick="spawnFog()">🌑 SOMBRA</button>
     
-    <h2>Personagens</h2>
-    <button class="btn" onclick="spawnHero()">👤 ADICIONAR HERÓI</button>
+    <h2>Elementos</h2>
+    <button class="btn" onclick="spawnHero()">👤 HERÓI / NPC</button>
+    <button class="btn" style="border-color:#f1c40f; color:#f1c40f;" onclick="spawnPista()">📄 NOVA PISTA</button>
 
     <div id="panel-edit" class="panel-edit">
         <h2 id="edit-type" style="margin-top:0">EDITAR</h2>
         
-        <div id="fog-controls">
-            <label>LARGURA (WIDTH):</label>
+        <label>NOME:</label>
+        <input type="text" id="tk-name" oninput="sync()">
+
+        <label>TAMANHO / ESCALA:</label>
+        <input type="range" id="tk-size" min="30" max="800" oninput="sync()">
+
+        <div id="hero-controls">
+            <label>VIDA (ATUAL / MAX):</label>
+            <div style="display:flex; gap:5px"><input type="number" id="tk-hp-cur" oninput="sync()"><input type="number" id="tk-hp-max" oninput="sync()"></div>
+            
+            <label>ESTADO:</label>
+            <select id="tk-state" onchange="sync()">
+                <option value="normal">ATIVO</option>
+                <option value="desmaiado">DESMAIADO</option>
+                <option value="morto">MORTO</option>
+            </select>
+        </div>
+
+        <div id="fog-controls" style="display:none">
+            <label>LARGURA / ALTURA:</label>
             <input type="range" id="fog-w" min="20" max="1000" oninput="syncFog()">
-            <label>ALTURA (HEIGHT):</label>
             <input type="range" id="fog-h" min="20" max="1000" oninput="syncFog()">
         </div>
 
-        <div id="hero-controls">
-            <label>NOME:</label>
-            <input type="text" id="tk-name" oninput="syncHero()">
-            <label>VIDA (ATUAL / MAX):</label>
-            <div style="display:flex; gap:5px">
-                <input type="number" id="tk-hp-cur" oninput="syncHero()">
-                <input type="number" id="tk-hp-max" oninput="syncHero()">
-            </div>
-            <button class="btn" onclick="document.getElementById('tk-img').click()">📷 MUDAR FOTO</button>
-            <input type="file" id="tk-img" style="display:none" onchange="loadTkImg(this)">
-        </div>
-
-        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:10px;" onclick="deleteActive()">ELIMINAR</button>
+        <button class="btn" style="margin-top:10px" onclick="document.getElementById('tk-img').click()">📷 CARREGAR IMAGEM</button>
+        <input type="file" id="tk-img" style="display:none" onchange="loadTkImg(this)">
+        <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="deleteActive()">ELIMINAR</button>
     </div>
 </div>
 
@@ -95,105 +107,103 @@
         }
     }
 
-    // --- SISTEMA DE SOMBRA (FOG) ---
-    function spawnFog() {
-        const f = document.createElement('div');
-        f.className = 'fog';
-        f.style.width = '150px'; f.style.height = '150px';
-        f.style.left = '100px'; f.style.top = '100px';
-        f.style.zIndex = 600;
-        f.innerText = 'ÁREA OCULTA';
+    function spawnHero() { createToken('hero'); }
+    function spawnPista() { createToken('pista'); }
 
-        f.onmousedown = function(e) {
-            selectFog(f);
+    function createToken(type) {
+        const t = document.createElement('div');
+        t.className = `token ${type}`;
+        t.style.left = '150px'; t.style.top = '150px'; t.style.zIndex = zIdx++;
+        t.innerHTML = `
+            <div class="tk-val"></div>
+            <div class="tk-art"></div>
+            <div class="tk-name">${type === 'pista' ? 'Documento' : 'Nome'}</div>
+            <div class="tk-bars"><div class="bar-bg"><div class="hp-fill"></div></div></div>`;
+        
+        t.dataset.type = type; t.dataset.size = type === 'pista' ? 120 : 70;
+        t.dataset.cur = 20; t.dataset.max = 20; t.dataset.state = 'normal';
+
+        t.onmousedown = function(e) {
+            select(t);
             if(e.button !== 0) return;
-            let sx = e.clientX - f.getBoundingClientRect().left;
-            let sy = e.clientY - f.getBoundingClientRect().top;
+            let sx = e.clientX - t.getBoundingClientRect().left;
+            let sy = e.clientY - t.getBoundingClientRect().top;
             function move(ev) {
                 const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
-                f.style.left = (ev.pageX - wrap.left - sx) + 'px';
-                f.style.top = (ev.pageY - wrap.top - sy) + 'px';
+                t.style.left = (ev.pageX - wrap.left - sx) + 'px'; t.style.top = (ev.pageY - wrap.top - sy) + 'px';
             }
             document.addEventListener('mousemove', move);
             document.onmouseup = () => document.removeEventListener('mousemove', move);
         };
+        document.getElementById('map-wrapper').appendChild(t);
+        select(t); sync();
+    }
 
+    function spawnFog() {
+        const f = document.createElement('div');
+        f.className = 'fog'; f.style.width = '200px'; f.style.height = '200px';
+        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 600;
+        f.onmousedown = function(e) {
+            selectFog(f);
+            let sx = e.clientX - f.getBoundingClientRect().left;
+            let sy = e.clientY - f.getBoundingClientRect().top;
+            function move(ev) {
+                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
+                f.style.left = (ev.pageX - wrap.left - sx) + 'px'; f.style.top = (ev.pageY - wrap.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
         document.getElementById('map-wrapper').appendChild(f);
         selectFog(f);
     }
 
+    function select(t) {
+        activeObj = t;
+        document.getElementById('panel-edit').style.display = 'block';
+        document.getElementById('hero-controls').style.display = t.dataset.type === 'hero' ? 'block' : 'none';
+        document.getElementById('fog-controls').style.display = 'none';
+        document.getElementById('tk-name').value = t.querySelector('.tk-name').innerText;
+        document.getElementById('tk-size').value = t.dataset.size;
+        document.getElementById('tk-hp-cur').value = t.dataset.cur;
+        document.getElementById('tk-hp-max').value = t.dataset.max;
+        document.getElementById('tk-state').value = t.dataset.state;
+    }
+
     function selectFog(f) {
         activeObj = f;
-        document.querySelectorAll('.fog, .token').forEach(el => el.classList.remove('selected'));
-        f.classList.add('selected');
-        
         document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('fog-controls').style.display = 'block';
         document.getElementById('hero-controls').style.display = 'none';
-        document.getElementById('edit-type').innerText = "AJUSTAR SOMBRA";
-        
+        document.getElementById('fog-controls').style.display = 'block';
         document.getElementById('fog-w').value = parseInt(f.style.width);
         document.getElementById('fog-h').value = parseInt(f.style.height);
+    }
+
+    function sync() {
+        if(!activeObj || activeObj.className.includes('fog')) return;
+        let s = document.getElementById('tk-size').value;
+        activeObj.dataset.size = s;
+        activeObj.dataset.cur = document.getElementById('tk-hp-cur').value;
+        activeObj.dataset.max = document.getElementById('tk-hp-max').value;
+        activeObj.dataset.state = document.getElementById('tk-state').value;
+
+        let art = activeObj.querySelector('.tk-art');
+        art.style.width = s + 'px'; 
+        art.style.height = activeObj.dataset.type === 'pista' ? (s*1.4)+'px' : s+'px';
+        
+        activeObj.querySelector('.tk-name').innerText = document.getElementById('tk-name').value;
+        art.className = 'tk-art state-' + activeObj.dataset.state;
+        
+        if(activeObj.dataset.type === 'hero') {
+            activeObj.querySelector('.tk-val').innerText = `${activeObj.dataset.cur}/${activeObj.dataset.max}`;
+            activeObj.querySelector('.hp-fill').style.width = (activeObj.dataset.cur / activeObj.dataset.max * 100) + '%';
+        }
     }
 
     function syncFog() {
         if(!activeObj) return;
         activeObj.style.width = document.getElementById('fog-w').value + 'px';
         activeObj.style.height = document.getElementById('fog-h').value + 'px';
-    }
-
-    // --- SISTEMA DE HERÓIS ---
-    function spawnHero() {
-        const h = document.createElement('div');
-        h.className = 'token';
-        h.style.left = '200px'; h.style.top = '200px'; h.style.zIndex = zIdx++;
-        h.innerHTML = `
-            <div class="tk-val">20/20</div>
-            <div class="tk-art"></div>
-            <div class="tk-name">Herói</div>
-            <div class="bar-bg"><div class="hp-fill"></div></div>`;
-        
-        h.dataset.cur = 20; h.dataset.max = 20;
-
-        h.onmousedown = function(e) {
-            selectHero(h);
-            if(e.button !== 0) return;
-            let sx = e.clientX - h.getBoundingClientRect().left;
-            let sy = e.clientY - h.getBoundingClientRect().top;
-            function move(ev) {
-                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
-                h.style.left = (ev.pageX - wrap.left - sx) + 'px';
-                h.style.top = (ev.pageY - wrap.top - sy) + 'px';
-            }
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => document.removeEventListener('mousemove', move);
-        };
-
-        document.getElementById('map-wrapper').appendChild(h);
-        selectHero(h);
-    }
-
-    function selectHero(h) {
-        activeObj = h;
-        document.querySelectorAll('.fog, .token').forEach(el => el.classList.remove('selected'));
-        document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('fog-controls').style.display = 'none';
-        document.getElementById('hero-controls').style.display = 'block';
-        document.getElementById('edit-type').innerText = "EDITAR HERÓI";
-
-        document.getElementById('tk-name').value = h.querySelector('.tk-name').innerText;
-        document.getElementById('tk-hp-cur').value = h.dataset.cur;
-        document.getElementById('tk-hp-max').value = h.dataset.max;
-    }
-
-    function syncHero() {
-        if(!activeObj) return;
-        let c = document.getElementById('tk-hp-cur').value;
-        let m = document.getElementById('tk-hp-max').value;
-        activeObj.dataset.cur = c; activeObj.dataset.max = m;
-        activeObj.querySelector('.tk-name').innerText = document.getElementById('tk-name').value;
-        activeObj.querySelector('.tk-val').innerText = `${c}/${m}`;
-        activeObj.querySelector('.hp-fill').style.width = (c/m * 100) + '%';
     }
 
     function loadTkImg(input) {
@@ -204,9 +214,7 @@
         }
     }
 
-    function deleteActive() {
-        if(activeObj) { activeObj.remove(); document.getElementById('panel-edit').style.display = 'none'; }
-    }
+    function deleteActive() { activeObj.remove(); document.getElementById('panel-edit').style.display = 'none'; }
 </script>
 </body>
 </html>
