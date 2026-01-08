@@ -2,302 +2,269 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDO REALITAS ULTRA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // OMNI ORDO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; 
-            --bg-dark: #050506; --panel: rgba(15, 15, 18, 0.95);
-            --border: rgba(0, 242, 255, 0.3);
-        }
+        :root { --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; --bg: #050506; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
 
-        * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--neon) transparent; }
-        body { 
-            margin: 0; background: var(--bg-dark); color: #e0e0e0; 
-            font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; 
-        }
-
-        /* --- PAINEL LATERAL (UI) --- */
+        /* INTERFACE LATERAL */
         #sidebar { 
-            width: 340px; background: var(--panel); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 1000; backdrop-filter: blur(10px);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5); padding: 20px;
+            width: 320px; background: rgba(10,10,12,0.98); border-right: 1px solid var(--neon); 
+            padding: 20px; z-index: 1000; overflow-y: auto; box-shadow: 10px 0 30px #000;
         }
+        .brand { font-family: 'Orbitron'; font-size: 16px; color: var(--neon); letter-spacing: 2px; margin-bottom: 20px; text-align: center; text-shadow: 0 0 10px var(--neon); }
+        .section-title { font-family: 'Orbitron'; font-size: 10px; color: #555; margin: 15px 0 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
 
-        .brand { font-family: 'Orbitron'; font-size: 18px; color: var(--neon); letter-spacing: 3px; margin-bottom: 25px; text-shadow: 0 0 10px var(--neon); }
-        .section-title { font-family: 'Orbitron'; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        /* VIEWPORT */
+        #viewport { flex: 1; position: relative; background: #0c0c0c; overflow: auto; display: flex; align-items: center; justify-content: center; }
+        #map-area { position: relative; box-shadow: 0 0 50px #000; }
+        #map-img { display: block; }
 
-        /* --- BOTÕES ESTILIZADOS --- */
-        .btn {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: #fff;
-            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px;
-            margin-bottom: 8px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0% 30%);
-        }
-        .btn:hover { background: var(--neon); color: #000; border-color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 255, 0.4); }
-        .btn-danger { border-color: var(--red); color: var(--red); }
-        .btn-danger:hover { background: var(--red); color: #fff; box-shadow: 0 5px 15px rgba(255, 62, 62, 0.4); }
-
-        /* --- ÁREA DO MAPA --- */
-        #viewport { flex: 1; position: relative; background: radial-gradient(circle, #1a1a1c 0%, #050506 100%); overflow: auto; display: flex; justify-content: center; align-items: center; }
-        #map-container { position: relative; box-shadow: 0 0 50px rgba(0,0,0,1); }
-        #main-map { display: block; max-width: none; }
-
-        /* --- TOKENS --- */
+        /* TOKENS (CORPO INTEIRO / RECORTE) */
         .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; }
         .tk-art { 
-            width: 70px; height: 70px; border: 2px solid var(--neon); border-radius: 50%;
-            background-size: cover; background-position: center; background-color: #111;
-            transition: transform 0.2s, filter 0.3s; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            width: 100px; height: 100px; 
+            background-size: contain; background-repeat: no-repeat; background-position: center bottom;
+            transition: filter 0.3s, transform 0.2s;
         }
-        .selected .tk-art { border-color: #fff; box-shadow: 0 0 20px var(--neon); transform: scale(1.05); }
+        .selected .tk-art { filter: drop-shadow(0 0 10px var(--neon)) !important; }
 
-        /* ESTADOS */
-        .state-injured { border-color: var(--red) !important; animation: pulse 1.5s infinite; }
-        .state-dead { filter: grayscale(1) brightness(0.4); }
-        .state-dead::after { content: '✕'; position: absolute; color: var(--red); font-size: 40px; top: 15%; }
+        /* ESTADOS VITAIS */
+        .state-injured { animation: pulseRed 1.2s infinite; filter: drop-shadow(0 0 5px var(--red)) !important; }
+        .state-dead { filter: grayscale(1) brightness(0.3) contrast(1.2) !important; opacity: 0.8; }
+        .state-dead::after { content: '✕'; position: absolute; color: var(--red); font-size: 40px; top: 20%; font-family: 'Orbitron'; }
 
-        @keyframes pulse { 0% { box-shadow: 0 0 0px var(--red); } 50% { box-shadow: 0 0 20px var(--red); } 100% { box-shadow: 0 0 0px var(--red); } }
+        @keyframes pulseRed { 0%, 100% { filter: drop-shadow(0 0 2px var(--red)); } 50% { filter: drop-shadow(0 0 15px var(--red)); } }
 
-        /* PISTAS */
-        .token.pista .tk-art { border-radius: 4px; border-color: var(--yellow); border-style: solid; width: 60px; height: 80px; }
+        /* UI DO TOKEN */
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 3px; border: 0.5px solid #333; }
+        .hp-ui { width: 100%; margin-top: 4px; }
+        .hp-text { font-size: 10px; color: var(--neon); text-align: center; font-weight: bold; margin-bottom: 2px; }
+        .hp-box { height: 4px; background: #000; border: 1px solid #333; border-radius: 2px; overflow: hidden; }
+        .hp-bar { height: 100%; background: var(--red); width: 100%; transition: width 0.4s; }
 
-        /* SOMBRAS */
-        .fog { position: absolute; background: rgba(0,0,0,0.95); border: 1px dashed rgba(255,255,255,0.1); z-index: 500; cursor: move; transition: opacity 0.3s; }
-        .fog:hover { border-color: var(--neon); }
-        .fog.selected { border: 2px solid var(--neon); background: rgba(0,0,0,0.8); }
+        /* FOG (SOMBRA AJUSTÁVEL) */
+        .fog { position: absolute; background: rgba(0,0,0,0.97); border: 1px dashed #222; z-index: 50; cursor: move; }
+        .fog.selected { border: 1px solid var(--neon); background: rgba(0,0,0,0.85); }
 
-        /* --- CONTROLES DE EDIÇÃO --- */
-        .edit-panel { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 15px; border-radius: 4px; display: none; margin-top: 10px; }
-        label { font-size: 9px; color: #888; text-transform: uppercase; margin-top: 10px; display: block; }
-        input, select { 
-            width: 100%; background: #000; border: 1px solid #333; color: #fff; 
-            padding: 8px; margin-top: 4px; font-family: 'Rajdhani'; font-weight: bold;
+        /* BOTÕES E INPUTS */
+        .btn { 
+            background: #000; border: 1px solid var(--neon); color: var(--neon); 
+            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; 
+            font-size: 9px; margin-bottom: 6px; text-transform: uppercase; transition: 0.2s;
         }
-        input[type="range"] { accent-color: var(--neon); }
+        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 15px var(--neon); }
+        .edit-panel { background: rgba(20,20,25,0.8); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; border: 1px solid #333; }
         
-        .stat-group { display: flex; gap: 5px; }
-
-        /* BARRA DE VIDA */
-        .tk-ui { width: 100%; text-align: center; margin-top: 5px; }
-        .tk-name { font-family: 'Orbitron'; font-size: 10px; color: #fff; text-shadow: 1px 1px 2px #000; margin-bottom: 3px; }
-        .hp-container { height: 4px; background: #000; border: 1px solid #222; width: 100%; border-radius: 2px; overflow: hidden; }
-        .hp-bar { height: 100%; background: var(--red); width: 100%; transition: width 0.4s ease-out; }
+        label { font-size: 9px; color: #666; display: block; margin-top: 10px; text-transform: uppercase; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 7px; margin-top: 4px; font-family: 'Rajdhani'; }
+        input[type="range"] { accent-color: var(--neon); cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div class="brand">NEXUS // CORE</div>
+    <div class="brand">NEXUS // OMNI CORE</div>
     
-    <button class="btn" onclick="document.getElementById('map-input').click()">📁 Carregar Mapa</button>
-    <input type="file" id="map-input" style="display:none" onchange="uploadMap(this)">
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ Carregar Mapa</button>
+    <input type="file" id="map-in" style="display:none" onchange="uploadMap(this)">
     
-    <div class="section-title">Comandos de Campo</div>
+    <div class="section-title">Criação</div>
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-        <button class="btn" onclick="addToken('hero')">👤 Herói</button>
-        <button class="btn" onclick="addToken('pista')">📄 Pista</button>
+        <button class="btn" onclick="spawn('hero')">👤 Personagem</button>
+        <button class="btn" onclick="spawn('pista')">📄 Pista</button>
     </div>
     <button class="btn" onclick="addFog()">🌑 Nova Sombra</button>
 
     <div id="edit-panel" class="edit-panel">
-        <h3 id="edit-label" style="font-family:'Orbitron'; font-size:10px; margin:0 0 10px 0; color:var(--neon)">CONFIGURAÇÃO</h3>
+        <h3 id="edit-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0; font-family:'Orbitron'">SISTEMA DE CONFIGURAÇÃO</h3>
         
-        <label>Identificação:</label>
-        <input type="text" id="edit-name" oninput="applyChanges()">
-        
-        <div id="hero-stats">
-            <label>Integridade Física (Atual/Máx):</label>
-            <div class="stat-group">
-                <input type="number" id="edit-hp-cur" oninput="applyChanges()">
-                <input type="number" id="edit-hp-max" oninput="applyChanges()">
+        <label>Nome / Identificação:</label>
+        <input type="text" id="in-name" oninput="sync()">
+
+        <div id="fog-controls" style="display:none">
+            <label>Largura:</label>
+            <input type="range" id="fog-w" min="20" max="1200" oninput="syncFog()">
+            <label>Altura:</label>
+            <input type="range" id="fog-h" min="20" max="1200" oninput="syncFog()">
+        </div>
+
+        <div id="hero-controls">
+            <label>Escala do Token:</label>
+            <input type="range" id="in-scale" min="30" max="800" oninput="sync()">
+            
+            <label>Pontos de Vida (Atual / Máx):</label>
+            <div style="display:flex; gap:5px">
+                <input type="number" id="in-cur" oninput="sync()">
+                <input type="number" id="in-max" oninput="sync()">
             </div>
+            
+            <label>Lado (Flip):</label>
+            <button class="btn" style="margin-top:5px;" onclick="flip()">Inverter Lado ↔️</button>
+
             <label>Estado Vital:</label>
-            <select id="edit-state" onchange="applyChanges()">
-                <option value="normal">ATIVO</option>
+            <select id="in-state" onchange="sync()">
+                <option value="normal">ATIVO / NORMAL</option>
                 <option value="injured">MORRENDO (PULSO)</option>
-                <option value="dead">K.O. / MORTO</option>
+                <option value="dead">MORTO / K.O.</option>
             </select>
         </div>
 
-        <div id="dim-controls">
-            <label>Escala Global:</label>
-            <input type="range" id="edit-scale" min="30" max="1000" oninput="applyChanges()">
-            <div id="fog-only" style="display:none">
-                <label>Altura:</label>
-                <input type="range" id="edit-h" min="20" max="1000" oninput="applyChanges()">
-            </div>
-        </div>
-
-        <button class="btn" style="margin-top:15px;" onclick="document.getElementById('img-input').click()">📷 Alterar Imagem</button>
-        <input type="file" id="img-input" style="display:none" onchange="uploadArt(this)">
+        <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('img-in').click()">📷 Carregar Imagem</button>
+        <input type="file" id="img-in" style="display:none" onchange="uploadArt(this)">
         
-        <button class="btn btn-danger" onclick="deleteTarget()">🗑️ Eliminar</button>
+        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:10px;" onclick="del()">🗑️ Eliminar</button>
     </div>
 
     <div class="section-title">Terminal de Dados</div>
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
-        <button class="btn" onclick="roll(20)">D20</button>
-        <button class="btn" onclick="roll(10)">D10</button>
-        <button class="btn" onclick="roll(6)">D6</button>
-    </div>
-    <div id="dice-log" style="font-size:11px; color:#555; margin-top:10px; height:100px; overflow-y:auto; font-family:monospace; background:rgba(0,0,0,0.2); padding:5px;"></div>
+    <button class="btn" onclick="roll(20)">Rolar D20</button>
+    <div id="dice-log" style="font-size:11px; color:#555; margin-top:10px; height:80px; overflow-y:auto; font-family:monospace; background:rgba(0,0,0,0.3); padding:8px; border:1px solid #111;"></div>
 </div>
 
 <div id="viewport">
-    <div id="map-container">
-        <img id="main-map" src="">
+    <div id="map-area">
+        <img id="map-img" src="">
     </div>
 </div>
 
 <script>
-    let currentTarget = null;
-    let zIndexCounter = 100;
+    let active = null;
+    let z = 100;
 
-    function uploadMap(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => document.getElementById('main-map').src = e.target.result;
-            reader.readAsDataURL(input.files[0]);
+    function uploadMap(i) {
+        if(i.files[0]) {
+            let r = new FileReader();
+            r.onload = e => document.getElementById('map-img').src = e.target.result;
+            r.readAsDataURL(i.files[0]);
         }
     }
 
-    function addToken(type) {
+    function spawn(type) {
         const t = document.createElement('div');
-        t.className = `token ${type}`;
-        t.style.left = '100px'; t.style.top = '100px'; t.style.zIndex = zIndexCounter++;
-        
+        t.className = 'token';
+        t.style.left = '150px'; t.style.top = '150px'; t.style.zIndex = z++;
         t.innerHTML = `
-            <div class="tk-ui"><div class="tk-name">Novo ${type}</div></div>
+            <div class="hp-ui"><div class="hp-text">20/20</div><div class="hp-box"><div class="hp-bar"></div></div></div>
             <div class="tk-art"></div>
-            <div class="tk-ui hp-ui">
-                <div style="font-size:9px; color:var(--neon); margin-top:2px;" class="hp-txt">20/20</div>
-                <div class="hp-container"><div class="hp-bar"></div></div>
-            </div>`;
+            <div class="tk-name">Novo</div>`;
+        
+        t.dataset.scale = type === 'pista' ? 120 : 80;
+        t.dataset.cur = 20; t.dataset.max = 20;
+        t.dataset.flip = 1; t.dataset.type = type;
 
-        t.dataset.type = type;
-        t.dataset.scale = type === 'pista' ? 120 : 75;
-        t.dataset.h = 100;
-        t.dataset.hpCur = 20;
-        t.dataset.hpMax = 20;
-        t.dataset.state = 'normal';
-
-        initDrag(t);
-        document.getElementById('map-container').appendChild(t);
-        t.dispatchEvent(new Event('mousedown'));
+        t.onmousedown = function(e) {
+            select(t);
+            if(e.button !== 0) return;
+            let sx = e.clientX - t.getBoundingClientRect().left;
+            let sy = e.clientY - t.getBoundingClientRect().top;
+            function move(ev) {
+                const rect = document.getElementById('map-area').getBoundingClientRect();
+                t.style.left = (ev.pageX - rect.left - sx) + 'px';
+                t.style.top = (ev.pageY - rect.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => { document.removeEventListener('mousemove', move); };
+        };
+        document.getElementById('map-area').appendChild(t);
+        select(t); sync();
     }
 
     function addFog() {
         const f = document.createElement('div');
-        f.className = 'fog';
-        f.style.width = '200px'; f.style.height = '200px';
-        f.style.left = '50px'; f.style.top = '50px'; f.style.zIndex = 500;
-        f.dataset.type = 'fog';
-        initDrag(f);
-        document.getElementById('map-container').appendChild(f);
-        f.dispatchEvent(new Event('mousedown'));
-    }
-
-    function initDrag(el) {
-        el.onmousedown = function(e) {
-            if (e.button !== 0) return;
-            selectTarget(el);
-            let shiftX = e.clientX - el.getBoundingClientRect().left;
-            let shiftY = e.clientY - el.getBoundingClientRect().top;
-
-            function moveAt(pageX, pageY) {
-                const map = document.getElementById('map-container').getBoundingClientRect();
-                el.style.left = (pageX - map.left - shiftX) + 'px';
-                el.style.top = (pageY - map.top - shiftY) + 'px';
+        f.className = 'fog'; f.style.width = '200px'; f.style.height = '200px';
+        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 50;
+        f.onmousedown = function(e) {
+            select(f);
+            let sx = e.clientX - f.getBoundingClientRect().left;
+            let sy = e.clientY - f.getBoundingClientRect().top;
+            function move(ev) {
+                const rect = document.getElementById('map-area').getBoundingClientRect();
+                f.style.left = (ev.pageX - rect.left - sx) + 'px';
+                f.style.top = (ev.pageY - rect.top - sy) + 'px';
             }
-
-            function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
-            document.addEventListener('mousemove', onMouseMove);
-            document.onmouseup = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.onmouseup = null;
-            };
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
         };
+        document.getElementById('map-area').appendChild(f);
+        select(f);
     }
 
-    function selectTarget(el) {
-        currentTarget = el;
+    function select(el) {
+        active = el;
         document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
-        el.style.zIndex = zIndexCounter++;
-
-        const isFog = el.dataset.type === 'fog';
+        el.style.zIndex = z++;
         document.getElementById('edit-panel').style.display = 'block';
-        document.getElementById('hero-stats').style.display = (el.dataset.type === 'hero') ? 'block' : 'none';
-        document.getElementById('fog-only').style.display = isFog ? 'block' : 'none';
         
-        if (!isFog) {
-            document.getElementById('edit-name').value = el.querySelector('.tk-name').innerText;
-            document.getElementById('edit-hp-cur').value = el.dataset.hpCur;
-            document.getElementById('edit-hp-max').value = el.dataset.hpMax;
-            document.getElementById('edit-state').value = el.dataset.state;
-            document.getElementById('edit-scale').value = el.dataset.scale;
+        const isFog = el.classList.contains('fog');
+        document.getElementById('hero-controls').style.display = isFog ? 'none' : 'block';
+        document.getElementById('fog-controls').style.display = isFog ? 'block' : 'none';
+        
+        if(!isFog) {
+            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('in-scale').value = el.dataset.scale;
+            document.getElementById('in-cur').value = el.dataset.cur;
+            document.getElementById('in-max').value = el.dataset.max;
+            document.getElementById('in-state').value = el.dataset.state || 'normal';
         } else {
-            document.getElementById('edit-name').value = "Área de Sombra";
-            document.getElementById('edit-scale').value = parseInt(el.style.width);
-            document.getElementById('edit-h').value = parseInt(el.style.height);
+            document.getElementById('in-name').value = "Sombra";
+            document.getElementById('fog-w').value = parseInt(el.style.width);
+            document.getElementById('fog-h').value = parseInt(el.style.height);
         }
     }
 
-    function applyChanges() {
-        if (!currentTarget) return;
-        const isFog = currentTarget.dataset.type === 'fog';
-
-        if (isFog) {
-            currentTarget.style.width = document.getElementById('edit-scale').value + 'px';
-            currentTarget.style.height = document.getElementById('edit-h').value + 'px';
+    function sync() {
+        if(!active || active.classList.contains('fog')) return;
+        const s = document.getElementById('in-scale').value;
+        active.dataset.scale = s;
+        active.dataset.cur = document.getElementById('in-cur').value;
+        active.dataset.max = document.getElementById('in-max').value;
+        active.dataset.state = document.getElementById('in-state').value;
+        
+        const art = active.querySelector('.tk-art');
+        art.style.width = s + 'px'; 
+        art.style.height = (active.dataset.type === 'pista' ? s*1.4 : s) + 'px';
+        art.style.transform = `scaleX(${active.dataset.flip})`;
+        
+        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        
+        if(active.dataset.type === 'hero') {
+            active.querySelector('.hp-ui').style.display = 'block';
+            active.querySelector('.hp-text').innerText = `${active.dataset.cur}/${active.dataset.max}`;
+            active.querySelector('.hp-bar').style.width = (active.dataset.cur / active.dataset.max * 100) + '%';
         } else {
-            const s = document.getElementById('edit-scale').value;
-            currentTarget.dataset.scale = s;
-            currentTarget.dataset.hpCur = document.getElementById('edit-hp-cur').value;
-            currentTarget.dataset.hpMax = document.getElementById('edit-hp-max').value;
-            currentTarget.dataset.state = document.getElementById('edit-state').value;
+            active.querySelector('.hp-ui').style.display = 'none';
+        }
+        
+        art.className = 'tk-art state-' + active.dataset.state;
+    }
 
-            const art = currentTarget.querySelector('.tk-art');
-            art.style.width = s + 'px';
-            art.style.height = (currentTarget.dataset.type === 'pista' ? s * 1.4 : s) + 'px';
-            
-            currentTarget.querySelector('.tk-name').innerText = document.getElementById('edit-name').value;
-            art.className = `tk-art state-${currentTarget.dataset.state}`;
-
-            if (currentTarget.dataset.type === 'hero') {
-                const pct = (currentTarget.dataset.hpCur / currentTarget.dataset.hpMax) * 100;
-                currentTarget.querySelector('.hp-bar').style.width = pct + '%';
-                currentTarget.querySelector('.hp-txt').innerText = `${currentTarget.dataset.hpCur}/${currentTarget.dataset.hpMax}`;
-            }
+    function syncFog() {
+        if(active && active.classList.contains('fog')) {
+            active.style.width = document.getElementById('fog-w').value + 'px';
+            active.style.height = document.getElementById('fog-h').value + 'px';
         }
     }
+
+    function flip() { if(active) { active.dataset.flip *= -1; sync(); } }
 
     function uploadArt(input) {
-        if (input.files && input.files[0] && currentTarget) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                if(currentTarget.querySelector('.tk-art'))
-                    currentTarget.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
-            };
-            reader.readAsDataURL(input.files[0]);
+        if (input.files[0] && active) {
+            let r = new FileReader();
+            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            r.readAsDataURL(input.files[0]);
         }
     }
 
-    function deleteTarget() {
-        if (currentTarget) {
-            currentTarget.remove();
-            currentTarget = null;
-            document.getElementById('edit-panel').style.display = 'none';
-        }
-    }
+    function del() { active.remove(); document.getElementById('edit-panel').style.display='none'; }
 
     function roll(f) {
         const v = Math.floor(Math.random() * f) + 1;
         const log = document.getElementById('dice-log');
-        log.innerHTML = `<div>> <span style="color:var(--neon)">d${f}:</span> <b>${v}</b></div>` + log.innerHTML;
+        log.innerHTML = `<div>> d${f}: <b style="color:white">${v}</b></div>` + log.innerHTML;
     }
 </script>
-
 </body>
 </html>
