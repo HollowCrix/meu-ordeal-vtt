@@ -61,4 +61,211 @@
         .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; text-transform: uppercase; }
         .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
         .edit-panel { background: rgba(20,20,25,0.9); padding: 12px; border-radius: 4px; display: none; margin-top: 10px; border: 1px solid #333; }
-        label { font-size: 9px; color: #666; display: block; margin-top: 1
+        label { font-size: 9px; color: #666; display: block; margin-top: 10px; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 6px; margin-top: 4px; font-family: 'Rajdhani'; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="brand">NEXUS // CORE V4</div>
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+    <input type="file" id="map-in" style="display:none" onchange="uploadMap(this)">
+    
+    <div class="section-title">ELEMENTOS</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+        <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
+        <button class="btn" onclick="spawn('pista')">📄 PISTA</button>
+    </div>
+    <button class="btn" onclick="addFog()">🌑 NOVA SOMBRA</button>
+
+    <div id="edit-panel" class="edit-panel">
+        <h3 id="edit-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0;">CENTRAL DE COMANDO</h3>
+        <label>IDENTIFICAÇÃO:</label>
+        <input type="text" id="in-name" oninput="sync()">
+
+        <div id="fog-controls" style="display:none">
+            <label>LARGURA / ALTURA:</label>
+            <div style="display:flex; gap:5px">
+                <input type="number" id="fog-w" oninput="syncFog()">
+                <input type="number" id="fog-h" oninput="syncFog()">
+            </div>
+        </div>
+
+        <div id="hero-controls">
+            <label>ESCALA (TAMANHO):</label>
+            <input type="range" id="in-scale" min="30" max="1000" oninput="sync()">
+            
+            <label>VIDA (ATUAL / MÁX):</label>
+            <div style="display:flex; gap:5px">
+                <input type="number" id="in-cur" oninput="sync()">
+                <input type="number" id="in-max" oninput="sync()">
+            </div>
+            
+            <label>CONDIÇÃO VITAL:</label>
+            <select id="in-state" onchange="sync()">
+                <option value="normal">ATIVO / SAUDÁVEL</option>
+                <option value="injured">FERIDO (PULSAR)</option>
+                <option value="insane">INSANIDADE / MEDO (AURA)</option>
+                <option value="dead">MORTO (X)</option>
+            </select>
+            <button class="btn" style="margin-top:10px;" onclick="flip()">INVERTER LADO ↔️</button>
+        </div>
+
+        <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('img-in').click()">📷 MUDAR ARTE</button>
+        <input type="file" id="img-in" style="display:none" onchange="uploadArt(this)">
+        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:10px;" onclick="del()">🗑️ ELIMINAR</button>
+    </div>
+</div>
+
+<div id="viewport">
+    <div id="map-area">
+        <img id="map-img" src="">
+    </div>
+</div>
+
+<script>
+    let active = null;
+    let zIdx = 100;
+
+    function uploadMap(i) {
+        if(i.files[0]) {
+            let r = new FileReader();
+            r.onload = e => document.getElementById('map-img').src = e.target.result;
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+
+    function spawn(type) {
+        const t = document.createElement('div');
+        t.className = 'token';
+        t.style.left = '200px'; t.style.top = '200px'; t.style.zIndex = zIdx++;
+        t.innerHTML = `
+            <div class="tk-ui-top">
+                <div class="hp-text">20/20</div>
+                <div class="hp-box"><div class="hp-bar"></div></div>
+            </div>
+            <div class="tk-art"></div>
+            <div class="tk-name">Novo</div>`;
+        
+        t.dataset.scale = type === 'pista' ? 120 : 80;
+        t.dataset.cur = 20; t.dataset.max = 20; t.dataset.flip = 1; t.dataset.type = type;
+        t.dataset.state = 'normal';
+
+        t.onmousedown = function(e) {
+            select(t);
+            if(e.button !== 0) return;
+            let sx = e.clientX - t.getBoundingClientRect().left;
+            let sy = e.clientY - t.getBoundingClientRect().top;
+            function move(ev) {
+                const rect = document.getElementById('map-area').getBoundingClientRect();
+                t.style.left = (ev.pageX - rect.left - sx) + 'px';
+                t.style.top = (ev.pageY - rect.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => { document.removeEventListener('mousemove', move); };
+        };
+        document.getElementById('map-area').appendChild(t);
+        select(t);
+        sync();
+    }
+
+    function addFog() {
+        const f = document.createElement('div');
+        f.className = 'fog'; f.style.width = '200px'; f.style.height = '200px';
+        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 50;
+        f.onmousedown = function(e) {
+            select(f);
+            let sx = e.clientX - f.getBoundingClientRect().left;
+            let sy = e.clientY - f.getBoundingClientRect().top;
+            function move(ev) {
+                const rect = document.getElementById('map-area').getBoundingClientRect();
+                f.style.left = (ev.pageX - rect.left - sx) + 'px';
+                f.style.top = (ev.pageY - rect.top - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+        document.getElementById('map-area').appendChild(f);
+        select(f);
+    }
+
+    function select(el) {
+        active = el;
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        el.style.zIndex = zIdx++;
+        document.getElementById('edit-panel').style.display = 'block';
+        
+        const isFog = el.classList.contains('fog');
+        document.getElementById('hero-controls').style.display = isFog ? 'none' : 'block';
+        document.getElementById('fog-controls').style.display = isFog ? 'block' : 'none';
+        
+        if(!isFog) {
+            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('in-scale').value = el.dataset.scale;
+            document.getElementById('in-cur').value = el.dataset.cur;
+            document.getElementById('in-max').value = el.dataset.max;
+            document.getElementById('in-state').value = el.dataset.state;
+        } else {
+            document.getElementById('fog-w').value = parseInt(el.style.width);
+            document.getElementById('fog-h').value = parseInt(el.style.height);
+        }
+    }
+
+    function sync() {
+        if(!active || active.classList.contains('fog')) return;
+        
+        const s = document.getElementById('in-scale').value;
+        active.dataset.scale = s;
+        active.dataset.cur = document.getElementById('in-cur').value;
+        active.dataset.max = document.getElementById('in-max').value;
+        active.dataset.state = document.getElementById('in-state').value;
+        
+        const art = active.querySelector('.tk-art');
+        const uiTop = active.querySelector('.tk-ui-top');
+        
+        // Ajuste de Tamanho
+        art.style.width = s + 'px'; 
+        art.style.height = (active.dataset.type === 'pista' ? s*1.4 : s) + 'px';
+        art.style.transform = `scaleX(${active.dataset.flip})`;
+        uiTop.style.width = s + 'px';
+
+        // Nome
+        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        
+        // Vida (Hero Only)
+        if(active.dataset.type === 'hero') {
+            uiTop.style.display = 'flex';
+            active.querySelector('.hp-text').innerText = `${active.dataset.cur}/${active.dataset.max}`;
+            const pct = (active.dataset.cur / active.dataset.max) * 100;
+            active.querySelector('.hp-bar').style.width = pct + '%';
+        } else {
+            uiTop.style.display = 'none';
+        }
+        
+        // Estado Visual
+        art.className = 'tk-art state-' + active.dataset.state;
+    }
+
+    function syncFog() {
+        if(active && active.classList.contains('fog')) {
+            active.style.width = document.getElementById('fog-w').value + 'px';
+            active.style.height = document.getElementById('fog-h').value + 'px';
+        }
+    }
+
+    function flip() { if(active) { active.dataset.flip *= -1; sync(); } }
+
+    function uploadArt(input) {
+        if (input.files[0] && active) {
+            let r = new FileReader();
+            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            r.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function del() { active.remove(); document.getElementById('edit-panel').style.display='none'; }
+</script>
+</body>
+</html>
