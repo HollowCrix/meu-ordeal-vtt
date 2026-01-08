@@ -2,219 +2,302 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDO REALITAS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // ORDO REALITAS ULTRA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --gray: #555; --bg: #050505; }
-        body { margin: 0; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
-        #menu { width: 320px; background: #0a0a0a; border-right: 2px solid var(--neon); padding: 15px; z-index: 1000; overflow-y: auto; }
-        h2 { font-family: 'Orbitron'; font-size: 11px; color: var(--neon); border-bottom: 1px solid #222; margin-top: 15px; text-transform: uppercase; padding-bottom: 5px;}
+        :root { 
+            --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; 
+            --bg-dark: #050506; --panel: rgba(15, 15, 18, 0.95);
+            --border: rgba(0, 242, 255, 0.3);
+        }
 
-        #viewport { flex: 1; position: relative; background: #111; overflow: auto; }
-        #map-wrapper { position: relative; display: inline-block; }
-        #map-img { display: block; }
+        * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--neon) transparent; }
+        body { 
+            margin: 0; background: var(--bg-dark); color: #e0e0e0; 
+            font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; 
+        }
 
-        /* FOG */
-        .fog { position: absolute; background: rgba(0,0,0,0.92); border: 1px dashed #444; z-index: 500; cursor: move; display: flex; align-items: center; justify-content: center; color: #444; font-size: 10px; }
+        /* --- PAINEL LATERAL (UI) --- */
+        #sidebar { 
+            width: 340px; background: var(--panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 1000; backdrop-filter: blur(10px);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5); padding: 20px;
+        }
 
-        /* TOKENS */
-        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; transition: opacity 0.3s; }
-        .tk-art { width: 60px; height: 60px; border: 2px solid var(--neon); border-radius: 50%; background-size: cover; background-position: center; background-color: #222; position: relative; }
-        
+        .brand { font-family: 'Orbitron'; font-size: 18px; color: var(--neon); letter-spacing: 3px; margin-bottom: 25px; text-shadow: 0 0 10px var(--neon); }
+        .section-title { font-family: 'Orbitron'; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+
+        /* --- BOTÕES ESTILIZADOS --- */
+        .btn {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: #fff;
+            padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px;
+            margin-bottom: 8px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0% 30%);
+        }
+        .btn:hover { background: var(--neon); color: #000; border-color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 255, 0.4); }
+        .btn-danger { border-color: var(--red); color: var(--red); }
+        .btn-danger:hover { background: var(--red); color: #fff; box-shadow: 0 5px 15px rgba(255, 62, 62, 0.4); }
+
+        /* --- ÁREA DO MAPA --- */
+        #viewport { flex: 1; position: relative; background: radial-gradient(circle, #1a1a1c 0%, #050506 100%); overflow: auto; display: flex; justify-content: center; align-items: center; }
+        #map-container { position: relative; box-shadow: 0 0 50px rgba(0,0,0,1); }
+        #main-map { display: block; max-width: none; }
+
+        /* --- TOKENS --- */
+        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        .tk-art { 
+            width: 70px; height: 70px; border: 2px solid var(--neon); border-radius: 50%;
+            background-size: cover; background-position: center; background-color: #111;
+            transition: transform 0.2s, filter 0.3s; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .selected .tk-art { border-color: #fff; box-shadow: 0 0 20px var(--neon); transform: scale(1.05); }
+
         /* ESTADOS */
-        .state-desmaiado { filter: grayscale(1) sepia(1) hue-rotate(180deg); opacity: 0.7; }
-        .state-morto { filter: grayscale(1) brightness(0.3); }
-        .state-morto::after { content: '❌'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; }
+        .state-injured { border-color: var(--red) !important; animation: pulse 1.5s infinite; }
+        .state-dead { filter: grayscale(1) brightness(0.4); }
+        .state-dead::after { content: '✕'; position: absolute; color: var(--red); font-size: 40px; top: 15%; }
 
-        /* DOCUMENTOS / PISTAS */
-        .token.pista .tk-art { border-radius: 4px; border-color: #f1c40f; border-style: solid; width: 100px; height: 140px; }
-        .token.pista .tk-bars, .token.pista .tk-val { display: none; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0px var(--red); } 50% { box-shadow: 0 0 20px var(--red); } 100% { box-shadow: 0 0 0px var(--red); } }
 
-        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; text-shadow: 2px 2px 2px #000; }
-        .tk-val { font-size: 11px; color: var(--neon); font-weight: bold; }
-        .bar-bg { width: 100%; height: 4px; background: #000; border: 1px solid #333; margin-top: 2px; }
-        .hp-fill { background: var(--red); height: 100%; width: 100%; transition: 0.3s; }
+        /* PISTAS */
+        .token.pista .tk-art { border-radius: 4px; border-color: var(--yellow); border-style: solid; width: 60px; height: 80px; }
 
-        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; }
-        .btn:hover { background: var(--neon); color: #000; }
+        /* SOMBRAS */
+        .fog { position: absolute; background: rgba(0,0,0,0.95); border: 1px dashed rgba(255,255,255,0.1); z-index: 500; cursor: move; transition: opacity 0.3s; }
+        .fog:hover { border-color: var(--neon); }
+        .fog.selected { border: 2px solid var(--neon); background: rgba(0,0,0,0.8); }
+
+        /* --- CONTROLES DE EDIÇÃO --- */
+        .edit-panel { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 15px; border-radius: 4px; display: none; margin-top: 10px; }
+        label { font-size: 9px; color: #888; text-transform: uppercase; margin-top: 10px; display: block; }
+        input, select { 
+            width: 100%; background: #000; border: 1px solid #333; color: #fff; 
+            padding: 8px; margin-top: 4px; font-family: 'Rajdhani'; font-weight: bold;
+        }
+        input[type="range"] { accent-color: var(--neon); }
         
-        .panel-edit { background: #111; padding: 12px; border-radius: 5px; margin-top: 10px; display: none; border: 1px solid #333; }
-        label { font-size: 9px; color: #777; display: block; margin-top: 8px; text-transform: uppercase; }
-        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 5px; margin-top: 2px; }
+        .stat-group { display: flex; gap: 5px; }
+
+        /* BARRA DE VIDA */
+        .tk-ui { width: 100%; text-align: center; margin-top: 5px; }
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; color: #fff; text-shadow: 1px 1px 2px #000; margin-bottom: 3px; }
+        .hp-container { height: 4px; background: #000; border: 1px solid #222; width: 100%; border-radius: 2px; overflow: hidden; }
+        .hp-bar { height: 100%; background: var(--red); width: 100%; transition: width 0.4s ease-out; }
     </style>
 </head>
 <body>
 
-<div id="menu">
-    <h2>Cenário</h2>
-    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ MAPA</button>
-    <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
-    <button class="btn" onclick="spawnFog()">🌑 SOMBRA</button>
+<div id="sidebar">
+    <div class="brand">NEXUS // CORE</div>
     
-    <h2>Elementos</h2>
-    <button class="btn" onclick="spawnHero()">👤 HERÓI / NPC</button>
-    <button class="btn" style="border-color:#f1c40f; color:#f1c40f;" onclick="spawnPista()">📄 NOVA PISTA</button>
+    <button class="btn" onclick="document.getElementById('map-input').click()">📁 Carregar Mapa</button>
+    <input type="file" id="map-input" style="display:none" onchange="uploadMap(this)">
+    
+    <div class="section-title">Comandos de Campo</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+        <button class="btn" onclick="addToken('hero')">👤 Herói</button>
+        <button class="btn" onclick="addToken('pista')">📄 Pista</button>
+    </div>
+    <button class="btn" onclick="addFog()">🌑 Nova Sombra</button>
 
-    <div id="panel-edit" class="panel-edit">
-        <h2 id="edit-type" style="margin-top:0">EDITAR</h2>
+    <div id="edit-panel" class="edit-panel">
+        <h3 id="edit-label" style="font-family:'Orbitron'; font-size:10px; margin:0 0 10px 0; color:var(--neon)">CONFIGURAÇÃO</h3>
         
-        <label>NOME:</label>
-        <input type="text" id="tk-name" oninput="sync()">
-
-        <label>TAMANHO / ESCALA:</label>
-        <input type="range" id="tk-size" min="30" max="800" oninput="sync()">
-
-        <div id="hero-controls">
-            <label>VIDA (ATUAL / MAX):</label>
-            <div style="display:flex; gap:5px"><input type="number" id="tk-hp-cur" oninput="sync()"><input type="number" id="tk-hp-max" oninput="sync()"></div>
-            
-            <label>ESTADO:</label>
-            <select id="tk-state" onchange="sync()">
+        <label>Identificação:</label>
+        <input type="text" id="edit-name" oninput="applyChanges()">
+        
+        <div id="hero-stats">
+            <label>Integridade Física (Atual/Máx):</label>
+            <div class="stat-group">
+                <input type="number" id="edit-hp-cur" oninput="applyChanges()">
+                <input type="number" id="edit-hp-max" oninput="applyChanges()">
+            </div>
+            <label>Estado Vital:</label>
+            <select id="edit-state" onchange="applyChanges()">
                 <option value="normal">ATIVO</option>
-                <option value="desmaiado">DESMAIADO</option>
-                <option value="morto">MORTO</option>
+                <option value="injured">MORRENDO (PULSO)</option>
+                <option value="dead">K.O. / MORTO</option>
             </select>
         </div>
 
-        <div id="fog-controls" style="display:none">
-            <label>LARGURA / ALTURA:</label>
-            <input type="range" id="fog-w" min="20" max="1000" oninput="syncFog()">
-            <input type="range" id="fog-h" min="20" max="1000" oninput="syncFog()">
+        <div id="dim-controls">
+            <label>Escala Global:</label>
+            <input type="range" id="edit-scale" min="30" max="1000" oninput="applyChanges()">
+            <div id="fog-only" style="display:none">
+                <label>Altura:</label>
+                <input type="range" id="edit-h" min="20" max="1000" oninput="applyChanges()">
+            </div>
         </div>
 
-        <button class="btn" style="margin-top:10px" onclick="document.getElementById('tk-img').click()">📷 CARREGAR IMAGEM</button>
-        <input type="file" id="tk-img" style="display:none" onchange="loadTkImg(this)">
-        <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="deleteActive()">ELIMINAR</button>
+        <button class="btn" style="margin-top:15px;" onclick="document.getElementById('img-input').click()">📷 Alterar Imagem</button>
+        <input type="file" id="img-input" style="display:none" onchange="uploadArt(this)">
+        
+        <button class="btn btn-danger" onclick="deleteTarget()">🗑️ Eliminar</button>
     </div>
+
+    <div class="section-title">Terminal de Dados</div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px;">
+        <button class="btn" onclick="roll(20)">D20</button>
+        <button class="btn" onclick="roll(10)">D10</button>
+        <button class="btn" onclick="roll(6)">D6</button>
+    </div>
+    <div id="dice-log" style="font-size:11px; color:#555; margin-top:10px; height:100px; overflow-y:auto; font-family:monospace; background:rgba(0,0,0,0.2); padding:5px;"></div>
 </div>
 
 <div id="viewport">
-    <div id="map-wrapper">
-        <img id="map-img" src="">
+    <div id="map-container">
+        <img id="main-map" src="">
     </div>
 </div>
 
 <script>
-    let activeObj = null;
-    let zIdx = 100;
+    let currentTarget = null;
+    let zIndexCounter = 100;
 
-    function loadMap(input) {
+    function uploadMap(input) {
         if (input.files && input.files[0]) {
-            let reader = new FileReader();
-            reader.onload = e => document.getElementById('map-img').src = e.target.result;
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('main-map').src = e.target.result;
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    function spawnHero() { createToken('hero'); }
-    function spawnPista() { createToken('pista'); }
-
-    function createToken(type) {
+    function addToken(type) {
         const t = document.createElement('div');
         t.className = `token ${type}`;
-        t.style.left = '150px'; t.style.top = '150px'; t.style.zIndex = zIdx++;
+        t.style.left = '100px'; t.style.top = '100px'; t.style.zIndex = zIndexCounter++;
+        
         t.innerHTML = `
-            <div class="tk-val"></div>
+            <div class="tk-ui"><div class="tk-name">Novo ${type}</div></div>
             <div class="tk-art"></div>
-            <div class="tk-name">${type === 'pista' ? 'Documento' : 'Nome'}</div>
-            <div class="tk-bars"><div class="bar-bg"><div class="hp-fill"></div></div></div>`;
-        
-        t.dataset.type = type; t.dataset.size = type === 'pista' ? 120 : 70;
-        t.dataset.cur = 20; t.dataset.max = 20; t.dataset.state = 'normal';
+            <div class="tk-ui hp-ui">
+                <div style="font-size:9px; color:var(--neon); margin-top:2px;" class="hp-txt">20/20</div>
+                <div class="hp-container"><div class="hp-bar"></div></div>
+            </div>`;
 
-        t.onmousedown = function(e) {
-            select(t);
-            if(e.button !== 0) return;
-            let sx = e.clientX - t.getBoundingClientRect().left;
-            let sy = e.clientY - t.getBoundingClientRect().top;
-            function move(ev) {
-                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
-                t.style.left = (ev.pageX - wrap.left - sx) + 'px'; t.style.top = (ev.pageY - wrap.top - sy) + 'px';
-            }
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => document.removeEventListener('mousemove', move);
-        };
-        document.getElementById('map-wrapper').appendChild(t);
-        select(t); sync();
+        t.dataset.type = type;
+        t.dataset.scale = type === 'pista' ? 120 : 75;
+        t.dataset.h = 100;
+        t.dataset.hpCur = 20;
+        t.dataset.hpMax = 20;
+        t.dataset.state = 'normal';
+
+        initDrag(t);
+        document.getElementById('map-container').appendChild(t);
+        t.dispatchEvent(new Event('mousedown'));
     }
 
-    function spawnFog() {
+    function addFog() {
         const f = document.createElement('div');
-        f.className = 'fog'; f.style.width = '200px'; f.style.height = '200px';
-        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 600;
-        f.onmousedown = function(e) {
-            selectFog(f);
-            let sx = e.clientX - f.getBoundingClientRect().left;
-            let sy = e.clientY - f.getBoundingClientRect().top;
-            function move(ev) {
-                const wrap = document.getElementById('map-wrapper').getBoundingClientRect();
-                f.style.left = (ev.pageX - wrap.left - sx) + 'px'; f.style.top = (ev.pageY - wrap.top - sy) + 'px';
+        f.className = 'fog';
+        f.style.width = '200px'; f.style.height = '200px';
+        f.style.left = '50px'; f.style.top = '50px'; f.style.zIndex = 500;
+        f.dataset.type = 'fog';
+        initDrag(f);
+        document.getElementById('map-container').appendChild(f);
+        f.dispatchEvent(new Event('mousedown'));
+    }
+
+    function initDrag(el) {
+        el.onmousedown = function(e) {
+            if (e.button !== 0) return;
+            selectTarget(el);
+            let shiftX = e.clientX - el.getBoundingClientRect().left;
+            let shiftY = e.clientY - el.getBoundingClientRect().top;
+
+            function moveAt(pageX, pageY) {
+                const map = document.getElementById('map-container').getBoundingClientRect();
+                el.style.left = (pageX - map.left - shiftX) + 'px';
+                el.style.top = (pageY - map.top - shiftY) + 'px';
             }
-            document.addEventListener('mousemove', move);
-            document.onmouseup = () => document.removeEventListener('mousemove', move);
+
+            function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+            document.addEventListener('mousemove', onMouseMove);
+            document.onmouseup = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.onmouseup = null;
+            };
         };
-        document.getElementById('map-wrapper').appendChild(f);
-        selectFog(f);
     }
 
-    function select(t) {
-        activeObj = t;
-        document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('hero-controls').style.display = t.dataset.type === 'hero' ? 'block' : 'none';
-        document.getElementById('fog-controls').style.display = 'none';
-        document.getElementById('tk-name').value = t.querySelector('.tk-name').innerText;
-        document.getElementById('tk-size').value = t.dataset.size;
-        document.getElementById('tk-hp-cur').value = t.dataset.cur;
-        document.getElementById('tk-hp-max').value = t.dataset.max;
-        document.getElementById('tk-state').value = t.dataset.state;
-    }
+    function selectTarget(el) {
+        currentTarget = el;
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        el.style.zIndex = zIndexCounter++;
 
-    function selectFog(f) {
-        activeObj = f;
-        document.getElementById('panel-edit').style.display = 'block';
-        document.getElementById('hero-controls').style.display = 'none';
-        document.getElementById('fog-controls').style.display = 'block';
-        document.getElementById('fog-w').value = parseInt(f.style.width);
-        document.getElementById('fog-h').value = parseInt(f.style.height);
-    }
-
-    function sync() {
-        if(!activeObj || activeObj.className.includes('fog')) return;
-        let s = document.getElementById('tk-size').value;
-        activeObj.dataset.size = s;
-        activeObj.dataset.cur = document.getElementById('tk-hp-cur').value;
-        activeObj.dataset.max = document.getElementById('tk-hp-max').value;
-        activeObj.dataset.state = document.getElementById('tk-state').value;
-
-        let art = activeObj.querySelector('.tk-art');
-        art.style.width = s + 'px'; 
-        art.style.height = activeObj.dataset.type === 'pista' ? (s*1.4)+'px' : s+'px';
+        const isFog = el.dataset.type === 'fog';
+        document.getElementById('edit-panel').style.display = 'block';
+        document.getElementById('hero-stats').style.display = (el.dataset.type === 'hero') ? 'block' : 'none';
+        document.getElementById('fog-only').style.display = isFog ? 'block' : 'none';
         
-        activeObj.querySelector('.tk-name').innerText = document.getElementById('tk-name').value;
-        art.className = 'tk-art state-' + activeObj.dataset.state;
-        
-        if(activeObj.dataset.type === 'hero') {
-            activeObj.querySelector('.tk-val').innerText = `${activeObj.dataset.cur}/${activeObj.dataset.max}`;
-            activeObj.querySelector('.hp-fill').style.width = (activeObj.dataset.cur / activeObj.dataset.max * 100) + '%';
+        if (!isFog) {
+            document.getElementById('edit-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('edit-hp-cur').value = el.dataset.hpCur;
+            document.getElementById('edit-hp-max').value = el.dataset.hpMax;
+            document.getElementById('edit-state').value = el.dataset.state;
+            document.getElementById('edit-scale').value = el.dataset.scale;
+        } else {
+            document.getElementById('edit-name').value = "Área de Sombra";
+            document.getElementById('edit-scale').value = parseInt(el.style.width);
+            document.getElementById('edit-h').value = parseInt(el.style.height);
         }
     }
 
-    function syncFog() {
-        if(!activeObj) return;
-        activeObj.style.width = document.getElementById('fog-w').value + 'px';
-        activeObj.style.height = document.getElementById('fog-h').value + 'px';
+    function applyChanges() {
+        if (!currentTarget) return;
+        const isFog = currentTarget.dataset.type === 'fog';
+
+        if (isFog) {
+            currentTarget.style.width = document.getElementById('edit-scale').value + 'px';
+            currentTarget.style.height = document.getElementById('edit-h').value + 'px';
+        } else {
+            const s = document.getElementById('edit-scale').value;
+            currentTarget.dataset.scale = s;
+            currentTarget.dataset.hpCur = document.getElementById('edit-hp-cur').value;
+            currentTarget.dataset.hpMax = document.getElementById('edit-hp-max').value;
+            currentTarget.dataset.state = document.getElementById('edit-state').value;
+
+            const art = currentTarget.querySelector('.tk-art');
+            art.style.width = s + 'px';
+            art.style.height = (currentTarget.dataset.type === 'pista' ? s * 1.4 : s) + 'px';
+            
+            currentTarget.querySelector('.tk-name').innerText = document.getElementById('edit-name').value;
+            art.className = `tk-art state-${currentTarget.dataset.state}`;
+
+            if (currentTarget.dataset.type === 'hero') {
+                const pct = (currentTarget.dataset.hpCur / currentTarget.dataset.hpMax) * 100;
+                currentTarget.querySelector('.hp-bar').style.width = pct + '%';
+                currentTarget.querySelector('.hp-txt').innerText = `${currentTarget.dataset.hpCur}/${currentTarget.dataset.hpMax}`;
+            }
+        }
     }
 
-    function loadTkImg(input) {
-        if (input.files && input.files[0] && activeObj) {
-            let reader = new FileReader();
-            reader.onload = e => activeObj.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+    function uploadArt(input) {
+        if (input.files && input.files[0] && currentTarget) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                if(currentTarget.querySelector('.tk-art'))
+                    currentTarget.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    function deleteActive() { activeObj.remove(); document.getElementById('panel-edit').style.display = 'none'; }
+    function deleteTarget() {
+        if (currentTarget) {
+            currentTarget.remove();
+            currentTarget = null;
+            document.getElementById('edit-panel').style.display = 'none';
+        }
+    }
+
+    function roll(f) {
+        const v = Math.floor(Math.random() * f) + 1;
+        const log = document.getElementById('dice-log');
+        log.innerHTML = `<div>> <span style="color:var(--neon)">d${f}:</span> <b>${v}</b></div>` + log.innerHTML;
+    }
 </script>
+
 </body>
 </html>
