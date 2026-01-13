@@ -2,114 +2,198 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ULTIMATE V10</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // ORDO HUD V11</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --red: #ff3e3e; --purple: #a020f0; --bg: #020203; }
-        * { box-sizing: border-box; outline: none; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; flex-direction: column; }
+        :root { 
+            --neon: #00f2ff; 
+            --red: #ff3e3e; 
+            --purple: #bc13fe; 
+            --bg: #050508;
+            --panel: rgba(10, 10, 15, 0.85);
+            --border: rgba(0, 242, 255, 0.2);
+        }
 
-        /* BARRA DE CENAS */
-        #scene-bar { height: 45px; background: #0a0a0c; border-bottom: 1px solid rgba(0,242,255,0.2); display: flex; align-items: center; padding: 0 15px; gap: 12px; z-index: 1100; }
-        .scene-btn { background: #111; border: 1px solid #333; color: #888; padding: 5px 15px; font-family: 'Orbitron'; font-size: 10px; cursor: pointer; border-radius: 3px; }
-        .scene-btn.active { border-color: var(--neon); color: var(--neon); background: rgba(0,242,255,0.05); box-shadow: 0 0 10px rgba(0,242,255,0.1); }
-        .add-scene { color: var(--neon); font-weight: bold; cursor: pointer; font-size: 18px; margin-left: 10px; }
+        * { box-sizing: border-box; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { 
+            margin: 0; background: var(--bg); color: #e0e0e0; 
+            font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; 
+            overflow: hidden; flex-direction: column; 
+        }
+
+        /* BARRA DE CENAS ESTILIZADA */
+        #scene-bar { 
+            height: 50px; background: rgba(5, 5, 5, 0.9); 
+            border-bottom: 1px solid var(--border); display: flex; 
+            align-items: center; padding: 0 20px; gap: 15px; z-index: 1100;
+            backdrop-filter: blur(10px);
+        }
+        .scene-btn { 
+            background: transparent; border: 1px solid #333; color: #666; 
+            padding: 6px 18px; font-family: 'Orbitron'; font-size: 10px; 
+            cursor: pointer; border-radius: 2px; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .scene-btn.active { 
+            border-color: var(--neon); color: var(--neon); 
+            background: rgba(0, 242, 255, 0.05);
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.1), 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+        .add-scene { 
+            color: var(--neon); font-size: 20px; cursor: pointer; 
+            padding: 0 10px; opacity: 0.7;
+        }
+        .add-scene:hover { opacity: 1; transform: scale(1.1); }
 
         #main-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* SIDEBAR */
-        #sidebar { width: 310px; background: rgba(10,10,12,0.98); border-right: 1px solid rgba(0,242,255,0.2); padding: 20px; z-index: 1000; overflow-y: auto; }
-        .brand { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; margin-bottom: 25px; text-align: center; text-shadow: 0 0 10px var(--neon); }
+        /* SIDEBAR HUD */
+        #sidebar { 
+            width: 320px; background: var(--panel); 
+            border-right: 1px solid var(--border); padding: 25px; 
+            z-index: 1000; overflow-y: auto; backdrop-filter: blur(15px);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+        .brand { 
+            font-family: 'Orbitron'; font-size: 16px; color: var(--neon); 
+            letter-spacing: 4px; margin-bottom: 35px; text-align: center;
+            text-shadow: 0 0 15px var(--neon); font-weight: 700;
+        }
 
-        /* VIEWPORT E MUNDO */
-        #viewport { flex: 1; position: relative; overflow: hidden; background-color: #080808; cursor: grab; }
+        /* VIEWPORT */
+        #viewport { flex: 1; position: relative; overflow: hidden; background-color: #030305; cursor: grab; }
         .world-layer { position: absolute; transform-origin: 0 0; display: none; pointer-events: none; }
         .world-layer.active { display: block; }
-        .map-img { pointer-events: none; user-select: none; }
 
-        /* TOKENS E SOMBRAS */
+        /* TOKENS - ESTÉTICA PULSANTE */
         .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
-        .tk-art { width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; background-position: center bottom; position: relative; transition: filter 0.3s; }
+        .tk-art { 
+            width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
+            background-position: center bottom; position: relative;
+        }
         
-        .selected .tk-art { filter: drop-shadow(0 0 15px var(--neon)) !important; }
-        .selected.fog { outline: 2px solid var(--neon); }
+        /* Efeito de Seleção */
+        .selected .tk-art { filter: drop-shadow(0 0 20px var(--neon)) !important; }
+        .selected.fog { outline: 1px solid var(--neon); box-shadow: 0 0 20px rgba(0, 242, 255, 0.3); }
 
-        /* ESTADOS VITAIS (RESTAURADOS) */
-        .state-dead { filter: grayscale(1) brightness(0.2) !important; }
-        .state-dead::after { content: '❌'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; z-index: 200; filter: none; }
+        /* ESTADOS VITAIS (MELHORADOS) */
+        .state-dead { filter: grayscale(1) brightness(0.3) contrast(1.2) !important; }
+        .state-dead::after { 
+            content: 'TERMINATED'; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); color: var(--red); font-family: 'Orbitron';
+            font-size: 10px; letter-spacing: 2px; text-shadow: 0 0 10px var(--red);
+        }
         
-        .state-injured { animation: pulseRed 1.2s infinite !important; }
-        @keyframes pulseRed { 0%, 100% { filter: drop-shadow(0 0 2px var(--red)) sepia(0.3); } 50% { filter: drop-shadow(0 0 15px var(--red)) sepia(0.6); } }
+        .state-injured { animation: pulseGlowRed 1.5s infinite ease-in-out !important; }
+        @keyframes pulseGlowRed { 
+            0%, 100% { filter: drop-shadow(0 0 5px var(--red)); } 
+            50% { filter: drop-shadow(0 0 25px var(--red)); } 
+        }
 
-        .state-insane { filter: drop-shadow(0 0 12px var(--purple)) hue-rotate(280deg) !important; }
+        .state-insane { animation: pulseGlowPurple 2s infinite ease-in-out !important; }
+        @keyframes pulseGlowPurple { 
+            0%, 100% { filter: drop-shadow(0 0 5px var(--purple)) hue-rotate(0deg); } 
+            50% { filter: drop-shadow(0 0 25px var(--purple)) hue-rotate(45deg); } 
+        }
 
         /* UI DO TOKEN */
-        .hp-bar-container { width: 100%; height: 5px; background: #000; border: 1px solid #333; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
-        .hp-bar-fill { height: 100%; background: var(--red); transition: width 0.3s; }
-        .tk-name { font-size: 10px; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid #333; margin-top: 4px; border-radius: 2px; }
+        .hp-bar-container { 
+            width: 100%; height: 4px; background: rgba(0,0,0,0.8); 
+            border: 1px solid #222; margin-bottom: 6px; border-radius: 1px; overflow: hidden; 
+        }
+        .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #500, var(--red)); box-shadow: 0 0 10px var(--red); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tk-name { 
+            font-size: 11px; background: rgba(0,0,0,0.85); color: #fff;
+            padding: 3px 10px; border: 1px solid var(--border); 
+            text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px;
+        }
         
-        .fog { background: #000; border: 1px dashed #444; }
+        .fog { background: rgba(0, 0, 0, 0.95); }
 
-        /* FORMULÁRIOS */
-        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 8px; text-transform: uppercase; }
-        .btn:hover { background: var(--neon); color: #000; }
-        .edit-panel { background: rgba(255,255,255,0.03); padding: 15px; display: none; border-left: 2px solid var(--neon); border-radius: 0 5px 5px 0; }
-        label { font-size: 9px; color: #555; display: block; margin-top: 10px; text-transform: uppercase; font-weight: bold; }
-        input, select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 7px; margin-top: 5px; font-family: 'Rajdhani'; }
+        /* INPUTS E BOTÕES ESTILIZADOS */
+        .btn { 
+            background: rgba(0, 242, 255, 0.03); border: 1px solid var(--border); 
+            color: var(--neon); padding: 12px; width: 100%; cursor: pointer; 
+            font-family: 'Orbitron'; font-size: 10px; margin-bottom: 10px; 
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
+        
+        .edit-panel { 
+            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 4px; 
+            border: 1px solid var(--border); margin-top: 15px;
+        }
+
+        label { font-size: 10px; color: var(--neon); display: block; margin-top: 15px; letter-spacing: 1px; opacity: 0.8; }
+        
+        input, select { 
+            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #333; 
+            color: #fff; padding: 8px; margin-top: 5px; font-family: 'Rajdhani';
+            font-size: 14px; border-radius: 2px;
+        }
+        input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); }
+
+        input[type="range"] { appearance: none; height: 3px; background: #333; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; background: var(--neon); cursor: pointer; border-radius: 50%; box-shadow: 0 0 10px var(--neon); }
+
+        .section-header { font-size: 10px; color: #555; border-bottom: 1px solid #222; padding-bottom: 5px; margin: 20px 0 10px; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
 
 <div id="scene-bar">
-    <div id="scenes-list" style="display:flex; gap:5px;"></div>
-    <div class="add-scene" title="Adicionar Nova Cena" onclick="createNewScene()">+</div>
+    <div id="scenes-list" style="display:flex; gap:8px;"></div>
+    <div class="add-scene" onclick="createNewScene()">+</div>
 </div>
 
 <div id="main-container">
     <div id="sidebar">
-        <div class="brand">NEXUS // CORE V10</div>
-        <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+        <div class="brand">NEXUS // HUD V11</div>
+        
+        <button class="btn" onclick="document.getElementById('map-in').click()">IMPLANTAR MAPA</button>
         <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
         
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
-            <button class="btn" onclick="spawn('fog')">🌑 SOMBRA</button>
+        <div class="section-header">UNIDADES & AMBIENTE</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <button class="btn" onclick="spawn('hero')">SUJEITO</button>
+            <button class="btn" onclick="spawn('fog')">BREU</button>
         </div>
 
         <div id="edit-panel" class="edit-panel">
-            <h3 id="panel-title" style="font-size:10px; color:var(--neon); margin:0; font-family:'Orbitron'">CONFIGURAÇÃO</h3>
+            <h3 style="font-size:11px; color:var(--neon); margin:0 0 15px 0; font-family:'Orbitron'; text-align:center;">DADOS DO ALVO</h3>
             
             <div id="hero-fields">
-                <label>IDENTIFICAÇÃO:</label>
+                <label>DESIGNAÇÃO:</label>
                 <input type="text" id="in-name" oninput="updateHero()">
                 
-                <label>TAMANHO:</label>
-                <input type="range" id="in-size" min="30" max="800" oninput="updateHero()">
+                <label>BIOMETRIA (HP):</label>
+                <div style="display:flex; gap:8px"><input type="number" id="in-cur" oninput="updateHero()"><input type="number" id="in-max" oninput="updateHero()"></div>
                 
-                <label>VIDA (ATUAL / MÁX):</label>
-                <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="updateHero()"><input type="number" id="in-max" oninput="updateHero()"></div>
+                <label>ESCALA VISUAL:</label>
+                <input type="range" id="in-size" min="40" max="600" oninput="updateHero()">
                 
-                <label>CONDIÇÃO VITAL:</label>
+                <label>ESTADO VITAL:</label>
                 <select id="in-state" onchange="updateHero()">
-                    <option value="normal">ATIVO / SAUDÁVEL</option>
-                    <option value="injured">FERIDO (PULSAR)</option>
-                    <option value="insane">INSANIDADE (AURA)</option>
-                    <option value="dead">MORTO (X)</option>
+                    <option value="normal">ESTÁVEL</option>
+                    <option value="injured">CRÍTICO (PULSAR)</option>
+                    <option value="insane">PSICOSE (AURA)</option>
+                    <option value="dead">TERMINADO</option>
                 </select>
                 
-                <button class="btn" style="margin-top:10px;" onclick="flip()">INVERTER LADO (F)</button>
+                <button class="btn" style="margin-top:20px; font-size:8px;" onclick="flip()">INVERTER ORIENTAÇÃO (F)</button>
             </div>
 
             <div id="fog-fields" style="display:none">
-                <label>DIMENSÕES (L x A):</label>
-                <div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
-                <label>OPACIDADE:</label>
+                <label>ÁREA (W x H):</label>
+                <div style="display:flex; gap:8px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
+                <label>DENSIDADE (OPACIDADE):</label>
                 <input type="range" id="in-op" min="0" max="100" value="100" oninput="updateFog()">
             </div>
 
-            <button id="btn-art" class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">📷 MUDAR ARTE</button>
+            <div class="section-header">ARQUIVOS</div>
+            <button id="btn-art" class="btn" style="border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">VINCULAR ARTE</button>
             <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
-            <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="removeActive()">🗑️ ELIMINAR</button>
+            <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="removeActive()">DESINTEGRAR (DEL)</button>
         </div>
     </div>
 
@@ -124,7 +208,7 @@
 
     function createNewScene() {
         const id = 'scene-' + Date.now();
-        const name = prompt("Nome da Cena:", "Cena " + (Object.keys(scenes).length + 1));
+        const name = prompt("Designação da Cena:", "SETOR " + (Object.keys(scenes).length + 1));
         if(!name) return;
         const world = document.createElement('div');
         world.id = id; world.className = 'world-layer';
@@ -156,7 +240,6 @@
         updateCamera();
     }
 
-    // --- CÂMERA (ZOOM FOCO NO MOUSE) ---
     const viewport = document.getElementById('viewport');
     function updateCamera() {
         if(!activeSceneId) return;
@@ -193,7 +276,6 @@
     window.onmouseup = () => isPanning = false;
     viewport.oncontextmenu = e => e.preventDefault();
 
-    // --- TOKENS E LÓGICA ---
     function spawn(type) {
         if(!activeSceneId) return;
         const s = scenes[activeSceneId];
@@ -203,7 +285,7 @@
         el.style.top = `${(viewport.offsetHeight/2 - s.camera.y)/s.camera.zoom - 50}px`;
         
         if(type === 'hero') {
-            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">Novo Herói</div>`;
+            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">UNIT_01</div>`;
             el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.state = 'normal'; el.dataset.flip = 1;
         } else {
             el.style.width = '200px'; el.style.height = '200px'; el.style.opacity = "1";
@@ -226,7 +308,7 @@
         };
         s.el.appendChild(el);
         select(el);
-        updateHero(); // Força a atualização inicial
+        updateHero();
     }
 
     function select(el) {
@@ -239,7 +321,6 @@
         const isHero = el.classList.contains('token');
         document.getElementById('hero-fields').style.display = isHero ? 'block' : 'none';
         document.getElementById('fog-fields').style.display = isHero ? 'none' : 'block';
-        document.getElementById('btn-art').style.display = isHero ? 'block' : 'none';
 
         if(isHero) {
             document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
@@ -286,32 +367,11 @@
     }
 
     function flip() { if(activeToken) { activeToken.dataset.flip = (activeToken.dataset.flip || 1) * -1; updateHero(); } }
-    
-    function loadMap(i) {
-        if(i.files[0] && activeSceneId) {
-            const r = new FileReader();
-            r.onload = e => { const img = scenes[activeSceneId].el.querySelector('.map-img'); img.src = e.target.result; img.style.display = 'block'; };
-            r.readAsDataURL(i.files[0]);
-        }
-    }
-
-    function loadArt(i) {
-        if(i.files[0] && activeToken) {
-            const r = new FileReader();
-            r.onload = e => activeToken.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
-            r.readAsDataURL(i.files[0]);
-        }
-    }
-
+    function loadMap(i) { if(i.files[0] && activeSceneId) { const r = new FileReader(); r.onload = e => { const img = scenes[activeSceneId].el.querySelector('.map-img'); img.src = e.target.result; img.style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
+    function loadArt(i) { if(i.files[0] && activeToken) { const r = new FileReader(); r.onload = e => activeToken.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`; r.readAsDataURL(i.files[0]); } }
     function removeActive() { if(activeToken) { activeToken.remove(); deselectAll(); } }
 
     window.onkeydown = e => {
         if(e.target.tagName === 'INPUT') return;
         if(e.key === 'Delete') removeActive();
         if(e.key.toLowerCase() === 'f') flip();
-    };
-
-    createNewScene();
-</script>
-</body>
-</html>
