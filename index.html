@@ -1,61 +1,312 @@
-// --- ADICIONE ESTE BLOCO DENTRO DA SUA TAG <SCRIPT> ---
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>NEXUS VTT // ORDO OMNI V5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #00f2ff; --red: #ff3e3e; --yellow: #f1c40f; --purple: #a020f0; --bg: #050506; }
+        * { box-sizing: border-box; outline: none; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
 
-let zoom = 1;
-const viewport = document.getElementById('viewport');
-const mapArea = document.getElementById('map-area');
+        /* INTERFACE LATERAL */
+        #sidebar { 
+            width: 320px; background: rgba(10,10,12,0.98); border-right: 1px solid var(--neon); 
+            padding: 20px; z-index: 1000; overflow-y: auto; box-shadow: 10px 0 30px #000;
+        }
+        .brand { font-family: 'Orbitron'; font-size: 16px; color: var(--neon); letter-spacing: 2px; margin-bottom: 20px; text-align: center; text-shadow: 0 0 10px var(--neon); }
+        .section-title { font-family: 'Orbitron'; font-size: 10px; color: #555; margin: 15px 0 8px; border-bottom: 1px solid #222; padding-bottom: 4px; text-transform: uppercase; }
 
-// 1. ZOOM COM O SCROLL DO MOUSE
-viewport.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    zoom = Math.min(Math.max(0.2, zoom + delta), 3); // Limita zoom entre 0.2x e 3x
-    mapArea.style.transform = `scale(${zoom})`;
-}, { passive: false });
+        /* VIEWPORT (MAPA) */
+        #viewport { 
+            flex: 1; position: relative; background: #080808; overflow: hidden; 
+            display: flex; align-items: center; justify-content: center; cursor: grab;
+        }
+        #viewport:active { cursor: grabbing; }
+        #map-container { position: relative; transform-origin: center; transition: transform 0.1s ease-out; }
+        #map-img { display: block; user-select: none; -webkit-user-drag: none; }
 
-// 2. ARRASTAR O MAPA (PAN) COM O BOTÃO DIREITO
-let isPanning = false;
-let startX, startY, scrollLeft, scrollTop;
+        /* TOKENS */
+        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
+        .tk-art { 
+            width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
+            background-position: center bottom; transition: filter 0.3s; position: relative;
+        }
+        
+        .selected .tk-art { 
+            filter: drop-shadow(0 0 10px var(--neon)) !important;
+            outline: 1px dashed var(--neon); outline-offset: 10px;
+        }
 
-viewport.addEventListener('mousedown', (e) => {
-    if (e.button === 2) { // Botão direito
-        isPanning = true;
-        startX = e.pageX - viewport.offsetLeft;
-        startY = e.pageY - viewport.offsetTop;
-        scrollLeft = viewport.scrollLeft;
-        scrollTop = viewport.scrollTop;
+        /* LANTERNA (FLASHLIGHT) */
+        .flashlight { 
+            position: absolute; z-index: 500; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            box-shadow: 0 0 40px rgba(255,255,255,0.1), inset 0 0 20px rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.1); cursor: move;
+        }
+        .flashlight.selected { border: 1px solid var(--neon); box-shadow: 0 0 20px var(--neon); }
+
+        /* ESTADOS */
+        .state-injured { animation: pulseRed 1.2s infinite; }
+        .state-dead { filter: grayscale(1) brightness(0.2) !important; }
+        .state-dead::before { content: '❌'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; z-index: 110; }
+        .state-insane { filter: drop-shadow(0 0 12px var(--purple)) hue-rotate(280deg) !important; }
+        @keyframes pulseRed { 0%, 100% { filter: drop-shadow(0 0 2px var(--red)); } 50% { filter: drop-shadow(0 0 15px var(--red)); } }
+
+        /* UI DO TOKEN */
+        .tk-ui-top { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 5px; }
+        .hp-text { font-size: 10px; color: var(--neon); font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        .hp-box { width: 100%; height: 5px; background: #000; border: 1px solid #333; border-radius: 2px; overflow: hidden; }
+        .hp-bar { height: 100%; background: var(--red); width: 100%; transition: width 0.4s; }
+        .tk-name { font-family: 'Orbitron'; font-size: 10px; margin-top: 5px; background: rgba(0,0,0,0.8); padding: 2px 8px; border: 1px solid #444; }
+
+        /* FOG */
+        .fog { position: absolute; background: rgba(0,0,0,0.98); border: 1px dashed #333; z-index: 400; cursor: move; }
+        .fog.selected { border: 1px solid var(--neon); }
+
+        /* UI BUTTONS */
+        .btn { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 8px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 5px; text-transform: uppercase; transition: 0.2s; }
+        .btn:hover { background: var(--neon); color: #000; }
+        .edit-panel { background: rgba(20,20,25,0.95); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; border: 1px solid #333; box-shadow: 0 10px 20px #000; }
+        label { font-size: 9px; color: #666; display: block; margin-top: 10px; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 6px; margin-top: 4px; font-family: 'Rajdhani'; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="brand">NEXUS // CORE V5</div>
+    <button class="btn" onclick="document.getElementById('map-in').click()">🖼️ CARREGAR MAPA</button>
+    <input type="file" id="map-in" style="display:none" onchange="uploadMap(this)">
+    
+    <div class="section-title">CRIAÇÃO</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+        <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
+        <button class="btn" onclick="spawn('pista')">📄 PISTA</button>
+    </div>
+    <button class="btn" onclick="addFog()">🌑 SOMBRA</button>
+    <button class="btn" style="border-color:#fff; color:#fff;" onclick="addFlashlight()">🔦 LANTERNA</button>
+
+    <div id="edit-panel" class="edit-panel">
+        <h3 id="edit-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0;">CONFIGURAÇÃO</h3>
+        
+        <label>IDENTIFICAÇÃO:</label>
+        <input type="text" id="in-name" oninput="sync()">
+
+        <div id="hero-controls">
+            <label>ESCALA / TAMANHO:</label>
+            <input type="range" id="in-scale" min="30" max="1000" oninput="sync()">
+            
+            <div id="hp-fields">
+                <label>VIDA (ATUAL / MÁX):</label>
+                <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="sync()"><input type="number" id="in-max" oninput="sync()"></div>
+                <label>CONDIÇÃO VITAL:</label>
+                <select id="in-state" onchange="sync()">
+                    <option value="normal">ATIVO</option>
+                    <option value="injured">FERIDO</option>
+                    <option value="insane">INSANO</option>
+                    <option value="dead">MORTO</option>
+                </select>
+            </div>
+            <button class="btn" style="margin-top:10px;" onclick="flip()">INVERTER LADO (F)</button>
+        </div>
+
+        <div id="fog-controls" style="display:none">
+            <label>DIMENSÕES:</label>
+            <div style="display:flex; gap:5px">
+                <input type="number" id="fog-w" oninput="syncFog()">
+                <input type="number" id="fog-h" oninput="syncFog()">
+            </div>
+        </div>
+
+        <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('img-in').click()">📷 MUDAR IMAGEM</button>
+        <input type="file" id="img-in" style="display:none" onchange="uploadArt(this)">
+        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:10px;" onclick="del()">🗑️ ELIMINAR (DEL)</button>
+    </div>
+</div>
+
+<div id="viewport">
+    <div id="map-container">
+        <img id="map-img" src="">
+        </div>
+</div>
+
+<script>
+    let active = null;
+    let zIdx = 1000;
+    let zoom = 1;
+    const viewport = document.getElementById('viewport');
+    const container = document.getElementById('map-container');
+
+    // --- SISTEMA DE ZOOM E PAN ---
+    viewport.addEventListener('wheel', e => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        zoom = Math.min(Math.max(0.1, zoom + delta), 4);
+        container.style.transform = `scale(${zoom})`;
+    }, {passive: false});
+
+    let isPanning = false, startX, startY, scrollL, scrollT;
+    viewport.addEventListener('mousedown', e => {
+        if(e.button === 2) {
+            isPanning = true;
+            startX = e.pageX - viewport.offsetLeft;
+            startY = e.pageY - viewport.offsetTop;
+            scrollL = viewport.scrollLeft;
+            scrollT = viewport.scrollTop;
+        }
+    });
+    viewport.addEventListener('mousemove', e => {
+        if(!isPanning) return;
+        viewport.scrollLeft = scrollL - (e.pageX - viewport.offsetLeft - startX);
+        viewport.scrollTop = scrollT - (e.pageY - viewport.offsetTop - startY);
+    });
+    window.addEventListener('mouseup', () => isPanning = false);
+    viewport.oncontextmenu = e => e.preventDefault();
+
+    // --- FUNÇÕES DE SPAWN ---
+    function uploadMap(i) {
+        if(i.files[0]) {
+            let r = new FileReader();
+            r.onload = e => document.getElementById('map-img').src = e.target.result;
+            r.readAsDataURL(i.files[0]);
+        }
     }
-});
 
-viewport.addEventListener('mousemove', (e) => {
-    if (!isPanning) return;
-    e.preventDefault();
-    const x = e.pageX - viewport.offsetLeft;
-    const y = e.pageY - viewport.offsetTop;
-    const walkX = (x - startX);
-    const walkY = (y - startY);
-    viewport.scrollLeft = scrollLeft - walkX;
-    viewport.scrollTop = scrollTop - walkY;
-});
+    function spawn(type) {
+        const t = document.createElement('div');
+        t.className = 'token';
+        t.style.left = '200px'; t.style.top = '200px'; t.style.zIndex = zIdx++;
+        t.innerHTML = `
+            <div class="tk-ui-top"><div class="hp-text">20/20</div><div class="hp-box"><div class="hp-bar"></div></div></div>
+            <div class="tk-art"></div>
+            <div class="tk-name">Novo</div>`;
+        t.dataset.scale = type === 'pista' ? 150 : 80;
+        t.dataset.cur = 20; t.dataset.max = 20; t.dataset.flip = 1; t.dataset.type = type;
+        t.dataset.state = 'normal';
+        initDrag(t);
+        container.appendChild(t);
+        select(t); sync();
+    }
 
-window.addEventListener('mouseup', () => isPanning = false);
+    function addFog() {
+        const f = document.createElement('div');
+        f.className = 'fog'; f.style.width = '300px'; f.style.height = '300px';
+        f.style.left = '100px'; f.style.top = '100px'; f.style.zIndex = 400;
+        initDrag(f);
+        container.appendChild(f);
+        select(f);
+    }
 
-// Desativa o menu de contexto padrão no mapa para não atrapalhar o Pan
-viewport.addEventListener('contextmenu', e => e.preventDefault());
+    function addFlashlight() {
+        const l = document.createElement('div');
+        l.className = 'flashlight'; l.style.width = '200px'; l.style.height = '200px';
+        l.style.left = '250px'; l.style.top = '250px'; l.style.zIndex = 600;
+        initDrag(l);
+        container.appendChild(l);
+        select(l);
+    }
 
-// 3. ATALHOS DE TECLADO
-window.addEventListener('keydown', (e) => {
-    if (!active) return;
-    
-    // Deletar com a tecla Delete
-    if (e.key === "Delete") del();
-    
-    // Flip com a tecla F
-    if (e.key.toLowerCase() === "f") flip();
-    
-    // Movimento fino com as setas
-    const step = 5;
-    if (e.key === "ArrowUp") active.style.top = (parseInt(active.style.top) - step) + "px";
-    if (e.key === "ArrowDown") active.style.top = (parseInt(active.style.top) + step) + "px";
-    if (e.key === "ArrowLeft") active.style.left = (parseInt(active.style.left) - step) + "px";
-    if (e.key === "ArrowRight") active.style.left = (parseInt(active.style.left) + step) + "px";
-});
+    // --- DRAG AND DROP ---
+    function initDrag(el) {
+        el.onmousedown = function(e) {
+            if(e.button !== 0) return;
+            e.stopPropagation();
+            select(el);
+            let sx = (e.clientX / zoom) - el.offsetLeft;
+            let sy = (e.clientY / zoom) - el.offsetTop;
+            
+            function move(ev) {
+                el.style.left = ((ev.clientX / zoom) - sx) + 'px';
+                el.style.top = ((ev.clientY / zoom) - sy) + 'px';
+            }
+            document.addEventListener('mousemove', move);
+            document.onmouseup = () => document.removeEventListener('mousemove', move);
+        };
+    }
+
+    function select(el) {
+        active = el;
+        document.querySelectorAll('.token, .fog, .flashlight').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        el.style.zIndex = zIdx++;
+        document.getElementById('edit-panel').style.display = 'block';
+        
+        const isFog = el.classList.contains('fog');
+        const isLight = el.classList.contains('flashlight');
+        
+        document.getElementById('hero-controls').style.display = (isFog || isLight) ? 'none' : 'block';
+        document.getElementById('fog-controls').style.display = (isFog || isLight) ? 'block' : 'none';
+
+        if(!isFog && !isLight) {
+            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('in-scale').value = el.dataset.scale;
+            document.getElementById('in-cur').value = el.dataset.cur;
+            document.getElementById('in-max').value = el.dataset.max;
+            document.getElementById('in-state').value = el.dataset.state;
+            document.getElementById('hp-fields').style.display = el.dataset.type === 'hero' ? 'block' : 'none';
+        } else {
+            document.getElementById('in-name').value = isFog ? "Sombra" : "Lanterna";
+            document.getElementById('fog-w').value = parseInt(el.style.width);
+            document.getElementById('fog-h').value = parseInt(el.style.height);
+        }
+    }
+
+    function sync() {
+        if(!active || active.classList.contains('fog') || active.classList.contains('flashlight')) return;
+        const s = document.getElementById('in-scale').value;
+        active.dataset.scale = s;
+        active.dataset.cur = document.getElementById('in-cur').value;
+        active.dataset.max = document.getElementById('in-max').value;
+        active.dataset.state = document.getElementById('in-state').value;
+        
+        const art = active.querySelector('.tk-art');
+        art.style.width = s + 'px'; 
+        art.style.height = (active.dataset.type === 'pista' ? s*1.4 : s) + 'px';
+        art.style.transform = `scaleX(${active.dataset.flip})`;
+        active.querySelector('.tk-ui-top').style.width = s + 'px';
+        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        
+        if(active.dataset.type === 'hero') {
+            active.querySelector('.hp-text').innerText = `${active.dataset.cur}/${active.dataset.max}`;
+            active.querySelector('.hp-bar').style.width = (active.dataset.cur / active.dataset.max * 100) + '%';
+        }
+        art.className = 'tk-art state-' + active.dataset.state;
+    }
+
+    function syncFog() {
+        if(active) {
+            active.style.width = document.getElementById('fog-w').value + 'px';
+            active.style.height = document.getElementById('fog-h').value + 'px';
+        }
+    }
+
+    function flip() { if(active) { active.dataset.flip *= -1; sync(); } }
+    function del() { if(active) { active.remove(); active = null; document.getElementById('edit-panel').style.display='none'; } }
+
+    function uploadArt(input) {
+        if (input.files[0] && active) {
+            let r = new FileReader();
+            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            r.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- HOTKEYS ---
+    window.addEventListener('keydown', e => {
+        if(document.activeElement.tagName === 'INPUT') return;
+        if(e.key === 'Delete') del();
+        if(e.key.toLowerCase() === 'f') flip();
+        if(active && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            let step = 5;
+            if(e.key === 'ArrowUp') active.style.top = (parseInt(active.style.top) - step) + 'px';
+            if(e.key === 'ArrowDown') active.style.top = (parseInt(active.style.top) + step) + 'px';
+            if(e.key === 'ArrowLeft') active.style.left = (parseInt(active.style.left) - step) + 'px';
+            if(e.key === 'ArrowRight') active.style.left = (parseInt(active.style.left) + step) + 'px';
+        }
+    });
+</script>
+</body>
+</html>
