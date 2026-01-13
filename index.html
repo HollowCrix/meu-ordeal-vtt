@@ -176,4 +176,102 @@
         
         if(type === 'hero') {
             el.innerHTML = `
-                <div class
+                <div class="hp-bar-container"><div class="hp-bar-fill"></div></div>
+                <div class="tk-art"></div>
+                <div class="tk-name">Novo Token</div>`;
+            el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.flip = 1;
+        } else {
+            el.style.width = '200px'; el.style.height = '200px';
+        }
+
+        el.onmousedown = e => {
+            if(e.button !== 0) return;
+            e.stopPropagation();
+            select(el);
+            let lastX = e.clientX;
+            let lastY = e.clientY;
+
+            const move = ev => {
+                const dx = (ev.clientX - lastX) / camera.zoom;
+                const dy = (ev.clientY - lastY) / camera.zoom;
+                el.style.left = (parseFloat(el.style.left) + dx) + 'px';
+                el.style.top = (parseFloat(el.style.top) + dy) + 'px';
+                lastX = ev.clientX;
+                lastY = ev.clientY;
+            };
+            window.onmousemove = move;
+            window.onmouseup = () => { window.onmousemove = isPanning ? window.onmousemove : null; };
+        };
+
+        world.appendChild(el);
+        select(el);
+        update();
+    }
+
+    function select(el) {
+        active = el;
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('edit-panel').style.display = 'block';
+        
+        const isHero = el.classList.contains('token');
+        document.getElementById('hero-only').style.display = isHero ? 'block' : 'none';
+        document.getElementById('fog-only').style.display = !isHero ? 'block' : 'none';
+
+        if(isHero) {
+            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('in-size').value = el.dataset.size;
+            document.getElementById('in-cur').value = el.dataset.cur;
+            document.getElementById('in-max').value = el.dataset.max;
+            document.getElementById('in-state').value = el.dataset.state || 'normal';
+        } else {
+            document.getElementById('in-w').value = parseInt(el.style.width);
+            document.getElementById('in-h').value = parseInt(el.style.height);
+        }
+    }
+
+    function update() {
+        if(!active || active.classList.contains('fog')) return;
+        active.dataset.size = document.getElementById('in-size').value;
+        active.dataset.cur = document.getElementById('in-cur').value;
+        active.dataset.max = document.getElementById('in-max').value;
+        active.dataset.state = document.getElementById('in-state').value;
+
+        const art = active.querySelector('.tk-art');
+        art.style.width = active.dataset.size + 'px';
+        art.style.height = active.dataset.size + 'px';
+        art.style.transform = `scaleX(${active.dataset.flip})`;
+        art.className = 'tk-art state-' + active.dataset.state;
+
+        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        const pct = (active.dataset.cur / active.dataset.max) * 100;
+        active.querySelector('.hp-bar-fill').style.width = pct + '%';
+    }
+
+    function updateFog() {
+        if(active && active.classList.contains('fog')) {
+            active.style.width = document.getElementById('in-w').value + 'px';
+            active.style.height = document.getElementById('in-h').value + 'px';
+        }
+    }
+
+    function flip() { if(active) { active.dataset.flip *= -1; update(); } }
+    function removeActive() { if(active) { active.remove(); active = null; document.getElementById('edit-panel').style.display = 'none'; } }
+
+    function loadArt(i) {
+        if(i.files[0] && active) {
+            const r = new FileReader();
+            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+
+    // Atalhos
+    window.onkeydown = e => {
+        if(e.target.tagName === 'INPUT') return;
+        if(e.key === 'Delete') removeActive();
+        if(e.key.toLowerCase() === 'f') flip();
+    };
+</script>
+</body>
+</html>
