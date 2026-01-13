@@ -2,198 +2,138 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ORDO HUD V11</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // ELEGANCE V12</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --neon: #00f2ff; 
-            --red: #ff3e3e; 
-            --purple: #bc13fe; 
-            --bg: #050508;
-            --panel: rgba(10, 10, 15, 0.85);
-            --border: rgba(0, 242, 255, 0.2);
+            --primary: #5a0000; /* Vinho */
+            --accent: #c8a032;  /* Dourado */
+            --bg-dark: #0f0f12;
+            --panel: #1a1a1f;
         }
 
-        * { box-sizing: border-box; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        * { box-sizing: border-box; outline: none; }
         body { 
-            margin: 0; background: var(--bg); color: #e0e0e0; 
-            font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; 
+            margin: 0; background: var(--bg-dark); color: #e0e0e0; 
+            font-family: 'Quicksand', sans-serif; display: flex; height: 100vh; 
             overflow: hidden; flex-direction: column; 
         }
 
-        /* BARRA DE CENAS ESTILIZADA */
+        /* BARRA DE CENAS */
         #scene-bar { 
-            height: 50px; background: rgba(5, 5, 5, 0.9); 
-            border-bottom: 1px solid var(--border); display: flex; 
-            align-items: center; padding: 0 20px; gap: 15px; z-index: 1100;
-            backdrop-filter: blur(10px);
+            height: 50px; background: #000; border-bottom: 2px solid var(--primary);
+            display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 1000;
         }
         .scene-btn { 
-            background: transparent; border: 1px solid #333; color: #666; 
-            padding: 6px 18px; font-family: 'Orbitron'; font-size: 10px; 
-            cursor: pointer; border-radius: 2px; text-transform: uppercase;
-            letter-spacing: 1px;
+            background: #222; border: 1px solid #444; color: #aaa; 
+            padding: 6px 15px; font-family: 'Cinzel'; font-size: 11px; 
+            cursor: pointer; border-radius: 4px; transition: 0.3s;
         }
         .scene-btn.active { 
-            border-color: var(--neon); color: var(--neon); 
-            background: rgba(0, 242, 255, 0.05);
-            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.1), 0 0 10px rgba(0, 242, 255, 0.2);
+            border-color: var(--accent); color: var(--accent); 
+            background: var(--primary); box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        .add-scene { 
-            color: var(--neon); font-size: 20px; cursor: pointer; 
-            padding: 0 10px; opacity: 0.7;
-        }
-        .add-scene:hover { opacity: 1; transform: scale(1.1); }
+        .add-scene { color: var(--accent); font-size: 24px; cursor: pointer; padding: 0 10px; }
 
         #main-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* SIDEBAR HUD */
+        /* SIDEBAR */
         #sidebar { 
-            width: 320px; background: var(--panel); 
-            border-right: 1px solid var(--border); padding: 25px; 
-            z-index: 1000; overflow-y: auto; backdrop-filter: blur(15px);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            width: 300px; background: var(--panel); border-right: 1px solid #333;
+            padding: 20px; z-index: 900; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
         }
         .brand { 
-            font-family: 'Orbitron'; font-size: 16px; color: var(--neon); 
-            letter-spacing: 4px; margin-bottom: 35px; text-align: center;
-            text-shadow: 0 0 15px var(--neon); font-weight: 700;
+            font-family: 'Cinzel'; font-size: 18px; color: var(--accent); 
+            text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--primary);
+            padding-bottom: 10px; letter-spacing: 2px;
         }
 
         /* VIEWPORT */
-        #viewport { flex: 1; position: relative; overflow: hidden; background-color: #030305; cursor: grab; }
-        .world-layer { position: absolute; transform-origin: 0 0; display: none; pointer-events: none; }
+        #viewport { flex: 1; position: relative; overflow: hidden; background: #08080a; cursor: grab; }
+        .world-layer { position: absolute; transform-origin: 0 0; display: none; }
         .world-layer.active { display: block; }
+        .map-img { pointer-events: none; user-select: none; }
 
-        /* TOKENS - ESTÉTICA PULSANTE */
-        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+        /* TOKENS */
+        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
         .tk-art { 
             width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
-            background-position: center bottom; position: relative;
+            background-position: center bottom; position: relative; border-radius: 50%;
         }
-        
-        /* Efeito de Seleção */
-        .selected .tk-art { filter: drop-shadow(0 0 20px var(--neon)) !important; }
-        .selected.fog { outline: 1px solid var(--neon); box-shadow: 0 0 20px rgba(0, 242, 255, 0.3); }
+        .selected .tk-art { filter: drop-shadow(0 0 10px var(--accent)); }
+        .selected.fog { outline: 2px solid var(--accent); }
 
-        /* ESTADOS VITAIS (MELHORADOS) */
-        .state-dead { filter: grayscale(1) brightness(0.3) contrast(1.2) !important; }
-        .state-dead::after { 
-            content: 'TERMINATED'; position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); color: var(--red); font-family: 'Orbitron';
-            font-size: 10px; letter-spacing: 2px; text-shadow: 0 0 10px var(--red);
-        }
-        
-        .state-injured { animation: pulseGlowRed 1.5s infinite ease-in-out !important; }
-        @keyframes pulseGlowRed { 
-            0%, 100% { filter: drop-shadow(0 0 5px var(--red)); } 
-            50% { filter: drop-shadow(0 0 25px var(--red)); } 
-        }
-
-        .state-insane { animation: pulseGlowPurple 2s infinite ease-in-out !important; }
-        @keyframes pulseGlowPurple { 
-            0%, 100% { filter: drop-shadow(0 0 5px var(--purple)) hue-rotate(0deg); } 
-            50% { filter: drop-shadow(0 0 25px var(--purple)) hue-rotate(45deg); } 
-        }
+        /* ESTADOS */
+        .state-dead { filter: grayscale(1) brightness(0.4) !important; }
+        .state-dead::after { content: '✕'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #ff0000; font-size: 40px; }
+        .state-injured { animation: pulseInjured 1.5s infinite; }
+        @keyframes pulseInjured { 0%, 100% { filter: drop-shadow(0 0 2px var(--primary)); } 50% { filter: drop-shadow(0 0 15px var(--primary)); } }
 
         /* UI DO TOKEN */
-        .hp-bar-container { 
-            width: 100%; height: 4px; background: rgba(0,0,0,0.8); 
-            border: 1px solid #222; margin-bottom: 6px; border-radius: 1px; overflow: hidden; 
-        }
-        .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #500, var(--red)); box-shadow: 0 0 10px var(--red); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .tk-name { 
-            font-size: 11px; background: rgba(0,0,0,0.85); color: #fff;
-            padding: 3px 10px; border: 1px solid var(--border); 
-            text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px;
-        }
-        
-        .fog { background: rgba(0, 0, 0, 0.95); }
+        .hp-bar-container { width: 100%; height: 6px; background: #000; border: 1px solid #444; margin-bottom: 4px; border-radius: 3px; overflow: hidden; }
+        .hp-bar-fill { height: 100%; background: linear-gradient(to right, #700, var(--primary)); transition: width 0.4s; }
+        .tk-name { font-size: 11px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--accent); margin-top: 4px; }
+        .fog { background: rgba(0,0,0,0.95); border: 1px dashed #333; }
 
-        /* INPUTS E BOTÕES ESTILIZADOS */
+        /* BOTÕES E INPUTS */
         .btn { 
-            background: rgba(0, 242, 255, 0.03); border: 1px solid var(--border); 
-            color: var(--neon); padding: 12px; width: 100%; cursor: pointer; 
-            font-family: 'Orbitron'; font-size: 10px; margin-bottom: 10px; 
-            text-transform: uppercase; letter-spacing: 2px;
+            background: var(--primary); border: 1px solid var(--accent); color: white; 
+            padding: 10px; width: 100%; cursor: pointer; font-family: 'Cinzel'; 
+            font-size: 10px; margin-bottom: 8px; border-radius: 4px;
         }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
-        
-        .edit-panel { 
-            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 4px; 
-            border: 1px solid var(--border); margin-top: 15px;
-        }
-
-        label { font-size: 10px; color: var(--neon); display: block; margin-top: 15px; letter-spacing: 1px; opacity: 0.8; }
-        
-        input, select { 
-            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #333; 
-            color: #fff; padding: 8px; margin-top: 5px; font-family: 'Rajdhani';
-            font-size: 14px; border-radius: 2px;
-        }
-        input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); }
-
-        input[type="range"] { appearance: none; height: 3px; background: #333; }
-        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; background: var(--neon); cursor: pointer; border-radius: 50%; box-shadow: 0 0 10px var(--neon); }
-
-        .section-header { font-size: 10px; color: #555; border-bottom: 1px solid #222; padding-bottom: 5px; margin: 20px 0 10px; font-family: 'Orbitron'; }
+        .btn:hover { background: #800; }
+        .edit-panel { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 10px; display: none; }
+        label { font-size: 10px; color: var(--accent); display: block; margin-top: 10px; text-transform: uppercase; font-weight: bold; }
+        input, select { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 8px; margin-top: 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div id="scene-bar">
     <div id="scenes-list" style="display:flex; gap:8px;"></div>
-    <div class="add-scene" onclick="createNewScene()">+</div>
+    <div class="add-scene" onclick="createNewScene()" title="Nova Cena">+</div>
 </div>
 
 <div id="main-container">
     <div id="sidebar">
-        <div class="brand">NEXUS // HUD V11</div>
+        <div class="brand">NEXUS V12</div>
         
-        <button class="btn" onclick="document.getElementById('map-in').click()">IMPLANTAR MAPA</button>
+        <button class="btn" onclick="document.getElementById('map-in').click()">CARREGAR MAPA</button>
         <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
         
-        <div class="section-header">UNIDADES & AMBIENTE</div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-            <button class="btn" onclick="spawn('hero')">SUJEITO</button>
-            <button class="btn" onclick="spawn('fog')">BREU</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+            <button class="btn" onclick="spawn('hero')">PERSONAGEM</button>
+            <button class="btn" onclick="spawn('fog')">SOMBRA</button>
         </div>
 
         <div id="edit-panel" class="edit-panel">
-            <h3 style="font-size:11px; color:var(--neon); margin:0 0 15px 0; font-family:'Orbitron'; text-align:center;">DADOS DO ALVO</h3>
-            
             <div id="hero-fields">
-                <label>DESIGNAÇÃO:</label>
-                <input type="text" id="in-name" oninput="updateHero()">
-                
-                <label>BIOMETRIA (HP):</label>
-                <div style="display:flex; gap:8px"><input type="number" id="in-cur" oninput="updateHero()"><input type="number" id="in-max" oninput="updateHero()"></div>
-                
-                <label>ESCALA VISUAL:</label>
-                <input type="range" id="in-size" min="40" max="600" oninput="updateHero()">
-                
-                <label>ESTADO VITAL:</label>
-                <select id="in-state" onchange="updateHero()">
-                    <option value="normal">ESTÁVEL</option>
-                    <option value="injured">CRÍTICO (PULSAR)</option>
-                    <option value="insane">PSICOSE (AURA)</option>
-                    <option value="dead">TERMINADO</option>
+                <label>NOME</label>
+                <input type="text" id="in-name" oninput="update()">
+                <label>TAMANHO</label>
+                <input type="range" id="in-size" min="30" max="600" oninput="update()">
+                <label>HP (ATUAL / MAX)</label>
+                <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="update()"><input type="number" id="in-max" oninput="update()"></div>
+                <label>ESTADO</label>
+                <select id="in-state" onchange="update()">
+                    <option value="normal">NORMAL</option>
+                    <option value="injured">FERIDO</option>
+                    <option value="dead">MORTO</option>
                 </select>
-                
-                <button class="btn" style="margin-top:20px; font-size:8px;" onclick="flip()">INVERTER ORIENTAÇÃO (F)</button>
+                <button class="btn" style="margin-top:10px; background: #333;" onclick="flip()">GIRAR (F)</button>
             </div>
 
             <div id="fog-fields" style="display:none">
-                <label>ÁREA (W x H):</label>
-                <div style="display:flex; gap:8px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
-                <label>DENSIDADE (OPACIDADE):</label>
-                <input type="range" id="in-op" min="0" max="100" value="100" oninput="updateFog()">
+                <label>LARGURA / ALTURA</label>
+                <div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
+                <label>OPACIDADE</label>
+                <input type="range" id="in-op" min="0" max="100" oninput="updateFog()">
             </div>
 
-            <div class="section-header">ARQUIVOS</div>
-            <button id="btn-art" class="btn" style="border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">VINCULAR ARTE</button>
+            <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+            <button class="btn" style="background:#444" onclick="document.getElementById('art-in').click()">MUDAR ARTE</button>
             <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
-            <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="removeActive()">DESINTEGRAR (DEL)</button>
+            <button class="btn" style="background:#a00; border:none;" onclick="removeActive()">DELETAR</button>
         </div>
     </div>
 
@@ -204,88 +144,82 @@
     let activeSceneId = null;
     let scenes = {};
     let activeToken = null;
-    let zIdxCount = 100;
+    let zCount = 100;
 
+    // --- CENAS ---
     function createNewScene() {
-        const id = 'scene-' + Date.now();
-        const name = prompt("Designação da Cena:", "SETOR " + (Object.keys(scenes).length + 1));
+        const id = 's-' + Date.now();
+        const name = prompt("Nome da Cena:", "Cena " + (Object.keys(scenes).length + 1));
         if(!name) return;
         const world = document.createElement('div');
         world.id = id; world.className = 'world-layer';
         world.innerHTML = `<img class="map-img" style="display:none;">`;
         document.getElementById('viewport').appendChild(world);
         scenes[id] = { name, camera: { x: 0, y: 0, zoom: 1 }, el: world };
-        renderSceneTabs();
+        renderTabs();
         switchScene(id);
     }
 
-    function renderSceneTabs() {
+    function renderTabs() {
         const list = document.getElementById('scenes-list');
         list.innerHTML = '';
         Object.keys(scenes).forEach(id => {
-            const btn = document.createElement('button');
-            btn.className = `scene-btn ${id === activeSceneId ? 'active' : ''}`;
-            btn.innerText = scenes[id].name;
-            btn.onclick = () => switchScene(id);
-            list.appendChild(btn);
+            const b = document.createElement('button');
+            b.className = `scene-btn ${id === activeSceneId ? 'active' : ''}`;
+            b.innerText = scenes[id].name;
+            b.onclick = () => switchScene(id);
+            list.appendChild(b);
         });
     }
 
     function switchScene(id) {
-        deselectAll();
+        deselect();
         activeSceneId = id;
         document.querySelectorAll('.world-layer').forEach(w => w.classList.remove('active'));
         scenes[id].el.classList.add('active');
-        renderSceneTabs();
-        updateCamera();
+        renderTabs();
+        updateCam();
     }
 
-    const viewport = document.getElementById('viewport');
-    function updateCamera() {
+    // --- CÂMERA ---
+    const vp = document.getElementById('viewport');
+    function updateCam() {
         if(!activeSceneId) return;
         const s = scenes[activeSceneId];
         s.el.style.transform = `translate(${s.camera.x}px, ${s.camera.y}px) scale(${s.camera.zoom})`;
     }
 
-    viewport.onwheel = e => {
+    vp.onwheel = e => {
         if(!activeSceneId) return;
         e.preventDefault();
         const s = scenes[activeSceneId];
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         const newZoom = Math.min(Math.max(0.1, s.camera.zoom * delta), 5);
-        const mx = e.clientX - viewport.offsetLeft;
-        const my = e.clientY - viewport.offsetTop;
+        const mx = e.clientX - vp.offsetLeft;
+        const my = e.clientY - vp.offsetTop;
         s.camera.x = mx - (mx - s.camera.x) * (newZoom / s.camera.zoom);
         s.camera.y = my - (my - s.camera.y) * (newZoom / s.camera.zoom);
         s.camera.zoom = newZoom;
-        updateCamera();
+        updateCam();
     };
 
-    let isPanning = false;
-    viewport.onmousedown = e => {
-        if(e.button === 2 || e.button === 1) isPanning = true;
-        else if(e.target === viewport) deselectAll();
-    };
-    window.onmousemove = e => {
-        if(isPanning && activeSceneId) {
-            scenes[activeSceneId].camera.x += e.movementX;
-            scenes[activeSceneId].camera.y += e.movementY;
-            updateCamera();
-        }
-    };
-    window.onmouseup = () => isPanning = false;
-    viewport.oncontextmenu = e => e.preventDefault();
+    let isPan = false;
+    vp.onmousedown = e => { if(e.button >= 1) isPan = true; else if(e.target === vp) deselect(); };
+    window.onmousemove = e => { if(isPan && activeSceneId) { scenes[activeSceneId].camera.x += e.movementX; scenes[activeSceneId].camera.y += e.movementY; updateCam(); }};
+    window.onmouseup = () => isPan = false;
+    vp.oncontextmenu = e => e.preventDefault();
 
+    // --- TOKENS ---
     function spawn(type) {
         if(!activeSceneId) return;
         const s = scenes[activeSceneId];
         const el = document.createElement('div');
         el.className = type === 'hero' ? 'token' : 'fog';
-        el.style.left = `${(viewport.offsetWidth/2 - s.camera.x)/s.camera.zoom - 50}px`;
-        el.style.top = `${(viewport.offsetHeight/2 - s.camera.y)/s.camera.zoom - 50}px`;
+        el.style.left = `${(vp.offsetWidth/2 - s.camera.x)/s.camera.zoom - 50}px`;
+        el.style.top = `${(vp.offsetHeight/2 - s.camera.y)/s.camera.zoom - 50}px`;
         
         if(type === 'hero') {
-            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">UNIT_01</div>`;
+            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">Novo</div>`;
             el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.state = 'normal'; el.dataset.flip = 1;
         } else {
             el.style.width = '200px'; el.style.height = '200px'; el.style.opacity = "1";
@@ -303,26 +237,24 @@
                 el.style.top = (parseFloat(el.style.top) + dy) + 'px';
                 lx = ev.clientX; ly = ev.clientY;
             };
-            window.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', () => window.removeEventListener('mousemove', move), {once:true});
+            window.onmousemove = move;
+            window.onmouseup = () => window.onmousemove = isPan ? window.onmousemove : null;
         };
         s.el.appendChild(el);
         select(el);
-        updateHero();
+        update();
     }
 
     function select(el) {
-        deselectAll();
+        deselect();
         activeToken = el;
         el.classList.add('selected');
-        el.style.zIndex = ++zIdxCount;
+        el.style.zIndex = ++zCount;
         document.getElementById('edit-panel').style.display = 'block';
-        
-        const isHero = el.classList.contains('token');
-        document.getElementById('hero-fields').style.display = isHero ? 'block' : 'none';
-        document.getElementById('fog-fields').style.display = isHero ? 'none' : 'block';
-
-        if(isHero) {
+        const isH = el.classList.contains('token');
+        document.getElementById('hero-fields').style.display = isH ? 'block' : 'none';
+        document.getElementById('fog-fields').style.display = isH ? 'none' : 'block';
+        if(isH) {
             document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
             document.getElementById('in-size').value = el.dataset.size;
             document.getElementById('in-cur').value = el.dataset.cur;
@@ -335,43 +267,22 @@
         }
     }
 
-    function deselectAll() {
+    function deselect() {
         activeToken = null;
         document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
         document.getElementById('edit-panel').style.display = 'none';
     }
 
-    function updateHero() {
+    function update() {
         if(!activeToken || !activeToken.classList.contains('token')) return;
         activeToken.dataset.size = document.getElementById('in-size').value;
         activeToken.dataset.cur = document.getElementById('in-cur').value;
         activeToken.dataset.max = document.getElementById('in-max').value;
         activeToken.dataset.state = document.getElementById('in-state').value;
-        
         const art = activeToken.querySelector('.tk-art');
         art.style.width = activeToken.dataset.size + 'px';
         art.style.height = activeToken.dataset.size + 'px';
         art.style.transform = `scaleX(${activeToken.dataset.flip || 1})`;
         art.className = 'tk-art state-' + activeToken.dataset.state;
-
         activeToken.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        const pct = (activeToken.dataset.cur / activeToken.dataset.max) * 100;
-        activeToken.querySelector('.hp-bar-fill').style.width = Math.max(0, Math.min(100, pct)) + '%';
-    }
-
-    function updateFog() {
-        if(!activeToken || !activeToken.classList.contains('fog')) return;
-        activeToken.style.width = document.getElementById('in-w').value + 'px';
-        activeToken.style.height = document.getElementById('in-h').value + 'px';
-        activeToken.style.opacity = document.getElementById('in-op').value / 100;
-    }
-
-    function flip() { if(activeToken) { activeToken.dataset.flip = (activeToken.dataset.flip || 1) * -1; updateHero(); } }
-    function loadMap(i) { if(i.files[0] && activeSceneId) { const r = new FileReader(); r.onload = e => { const img = scenes[activeSceneId].el.querySelector('.map-img'); img.src = e.target.result; img.style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
-    function loadArt(i) { if(i.files[0] && activeToken) { const r = new FileReader(); r.onload = e => activeToken.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`; r.readAsDataURL(i.files[0]); } }
-    function removeActive() { if(activeToken) { activeToken.remove(); deselectAll(); } }
-
-    window.onkeydown = e => {
-        if(e.target.tagName === 'INPUT') return;
-        if(e.key === 'Delete') removeActive();
-        if(e.key.toLowerCase() === 'f') flip();
+        activeToken.querySelector('.hp-bar-fill').style.width = (activeToken.dataset.cur/activeToken.dataset.max*10
