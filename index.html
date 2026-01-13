@@ -2,237 +2,208 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ELEGANCE V12</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <title>NEXUS VTT // FINAL STABLE V13</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #5a0000; /* Vinho */
-            --accent: #c8a032;  /* Dourado */
-            --bg-dark: #0f0f12;
-            --panel: #1a1a1f;
-        }
+        :root { --gold: #c8a032; --wine: #5a0000; --bg: #0a0a0c; --panel: #141417; }
+        
+        * { box-sizing: border-box; outline: none; margin: 0; padding: 0; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'Quicksand', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        * { box-sizing: border-box; outline: none; }
-        body { 
-            margin: 0; background: var(--bg-dark); color: #e0e0e0; 
-            font-family: 'Quicksand', sans-serif; display: flex; height: 100vh; 
-            overflow: hidden; flex-direction: column; 
-        }
+        /* HEADER */
+        #scene-bar { height: 50px; background: #000; border-bottom: 2px solid var(--wine); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 2000; }
+        .scene-btn { background: #1a1a1a; border: 1px solid #333; color: #888; padding: 6px 15px; font-family: 'Cinzel'; font-size: 11px; cursor: pointer; border-radius: 4px; }
+        .scene-btn.active { border-color: var(--gold); color: var(--gold); background: var(--wine); }
+        .add-scene { color: var(--gold); font-size: 24px; cursor: pointer; padding: 0 10px; line-height: 1; }
 
-        /* BARRA DE CENAS */
-        #scene-bar { 
-            height: 50px; background: #000; border-bottom: 2px solid var(--primary);
-            display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 1000;
-        }
-        .scene-btn { 
-            background: #222; border: 1px solid #444; color: #aaa; 
-            padding: 6px 15px; font-family: 'Cinzel'; font-size: 11px; 
-            cursor: pointer; border-radius: 4px; transition: 0.3s;
-        }
-        .scene-btn.active { 
-            border-color: var(--accent); color: var(--accent); 
-            background: var(--primary); box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .add-scene { color: var(--accent); font-size: 24px; cursor: pointer; padding: 0 10px; }
-
-        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #main { display: flex; flex: 1; overflow: hidden; }
 
         /* SIDEBAR */
-        #sidebar { 
-            width: 300px; background: var(--panel); border-right: 1px solid #333;
-            padding: 20px; z-index: 900; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-        }
-        .brand { 
-            font-family: 'Cinzel'; font-size: 18px; color: var(--accent); 
-            text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--primary);
-            padding-bottom: 10px; letter-spacing: 2px;
-        }
+        #sidebar { width: 300px; background: var(--panel); border-right: 1px solid #222; padding: 20px; z-index: 1500; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+        .brand { font-family: 'Cinzel'; font-size: 18px; color: var(--gold); text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
 
-        /* VIEWPORT */
-        #viewport { flex: 1; position: relative; overflow: hidden; background: #08080a; cursor: grab; }
-        .world-layer { position: absolute; transform-origin: 0 0; display: none; }
-        .world-layer.active { display: block; }
-        .map-img { pointer-events: none; user-select: none; }
+        /* VIEWPORT - ONDE TUDO ACONTECE */
+        #viewport { flex: 1; position: relative; background: #050505; cursor: grab; overflow: hidden; }
+        #viewport:active { cursor: grabbing; }
+        .world { position: absolute; transform-origin: 0 0; will-change: transform; pointer-events: none; }
+        .world.active { pointer-events: auto; } /* Só a cena ativa aceita cliques no mundo */
 
-        /* TOKENS */
-        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
-        .tk-art { 
-            width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
-            background-position: center bottom; position: relative; border-radius: 50%;
-        }
-        .selected .tk-art { filter: drop-shadow(0 0 10px var(--accent)); }
-        .selected.fog { outline: 2px solid var(--accent); }
+        /* OBJETOS */
+        .token, .fog { position: absolute; cursor: move; display: flex; flex-direction: column; align-items: center; pointer-events: all; }
+        .tk-art { background-size: contain; background-repeat: no-repeat; background-position: center bottom; position: relative; pointer-events: none; }
+        
+        /* ESTADOS VISUAIS */
+        .selected .tk-art { filter: drop-shadow(0 0 8px var(--gold)) !important; }
+        .state-dead { filter: grayscale(1) brightness(0.3) !important; }
+        .state-dead::after { content: '✕'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #ff0000; font-size: 40px; text-shadow: 0 0 10px #000; }
+        
+        .state-injured { animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { filter: drop-shadow(0 0 2px var(--wine)); } 50% { filter: drop-shadow(0 0 15px #f00); } }
 
-        /* ESTADOS */
-        .state-dead { filter: grayscale(1) brightness(0.4) !important; }
-        .state-dead::after { content: '✕'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #ff0000; font-size: 40px; }
-        .state-injured { animation: pulseInjured 1.5s infinite; }
-        @keyframes pulseInjured { 0%, 100% { filter: drop-shadow(0 0 2px var(--primary)); } 50% { filter: drop-shadow(0 0 15px var(--primary)); } }
+        /* UI DOS TOKENS */
+        .hp-bar { width: 100%; height: 6px; background: #000; border: 1px solid #333; border-radius: 3px; margin-bottom: 4px; overflow: hidden; }
+        .hp-fill { height: 100%; background: var(--wine); transition: width 0.3s; }
+        .tk-name { font-size: 11px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--gold); margin-top: 4px; pointer-events: none; }
+        .fog { background: rgba(0,0,0,0.95); border: 2px dashed #333; }
+        .fog.selected { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
 
-        /* UI DO TOKEN */
-        .hp-bar-container { width: 100%; height: 6px; background: #000; border: 1px solid #444; margin-bottom: 4px; border-radius: 3px; overflow: hidden; }
-        .hp-bar-fill { height: 100%; background: linear-gradient(to right, #700, var(--primary)); transition: width 0.4s; }
-        .tk-name { font-size: 11px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--accent); margin-top: 4px; }
-        .fog { background: rgba(0,0,0,0.95); border: 1px dashed #333; }
-
-        /* BOTÕES E INPUTS */
-        .btn { 
-            background: var(--primary); border: 1px solid var(--accent); color: white; 
-            padding: 10px; width: 100%; cursor: pointer; font-family: 'Cinzel'; 
-            font-size: 10px; margin-bottom: 8px; border-radius: 4px;
-        }
-        .btn:hover { background: #800; }
-        .edit-panel { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 10px; display: none; }
-        label { font-size: 10px; color: var(--accent); display: block; margin-top: 10px; text-transform: uppercase; font-weight: bold; }
+        /* FORMULÁRIOS */
+        .btn { background: var(--wine); border: 1px solid var(--gold); color: white; padding: 10px; width: 100%; cursor: pointer; font-family: 'Cinzel'; font-size: 10px; margin-bottom: 8px; border-radius: 4px; }
+        .btn:hover { filter: brightness(1.2); }
+        .panel-edit { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 10px; display: none; }
+        label { font-size: 10px; color: var(--gold); display: block; margin-top: 10px; font-weight: bold; }
         input, select { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 8px; margin-top: 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div id="scene-bar">
-    <div id="scenes-list" style="display:flex; gap:8px;"></div>
-    <div class="add-scene" onclick="createNewScene()" title="Nova Cena">+</div>
+    <div id="scenes-list"></div>
+    <div class="add-scene" onclick="addScene()">+</div>
 </div>
 
-<div id="main-container">
+<div id="main">
     <div id="sidebar">
-        <div class="brand">NEXUS V12</div>
-        
+        <div class="brand">NEXUS V13</div>
         <button class="btn" onclick="document.getElementById('map-in').click()">CARREGAR MAPA</button>
         <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <button class="btn" onclick="spawn('hero')">PERSONAGEM</button>
+            <button class="btn" onclick="spawn('hero')">HERÓI</button>
             <button class="btn" onclick="spawn('fog')">SOMBRA</button>
         </div>
 
-        <div id="edit-panel" class="edit-panel">
-            <div id="hero-fields">
-                <label>NOME</label>
-                <input type="text" id="in-name" oninput="update()">
-                <label>TAMANHO</label>
-                <input type="range" id="in-size" min="30" max="600" oninput="update()">
-                <label>HP (ATUAL / MAX)</label>
-                <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="update()"><input type="number" id="in-max" oninput="update()"></div>
+        <div id="edit-panel" class="panel-edit">
+            <div id="hero-ctrl">
+                <label>NOME</label><input type="text" id="in-name" oninput="apply()">
+                <label>TAMANHO</label><input type="range" id="in-size" min="30" max="600" oninput="apply()">
+                <label>HP</label><div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="apply()"><input type="number" id="in-max" oninput="apply()"></div>
                 <label>ESTADO</label>
-                <select id="in-state" onchange="update()">
+                <select id="in-state" onchange="apply()">
                     <option value="normal">NORMAL</option>
                     <option value="injured">FERIDO</option>
                     <option value="dead">MORTO</option>
                 </select>
-                <button class="btn" style="margin-top:10px; background: #333;" onclick="flip()">GIRAR (F)</button>
+                <button class="btn" style="margin-top:10px; background:#222;" onclick="flip()">INVERTER (F)</button>
             </div>
-
-            <div id="fog-fields" style="display:none">
-                <label>LARGURA / ALTURA</label>
-                <div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
-                <label>OPACIDADE</label>
-                <input type="range" id="in-op" min="0" max="100" oninput="updateFog()">
+            <div id="fog-ctrl" style="display:none">
+                <label>LARGURA / ALTURA</label><div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="applyFog()"><input type="number" id="in-h" oninput="applyFog()"></div>
+                <label>OPACIDADE</label><input type="range" id="in-op" min="0" max="100" oninput="applyFog()">
             </div>
-
-            <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
-            <button class="btn" style="background:#444" onclick="document.getElementById('art-in').click()">MUDAR ARTE</button>
+            <hr style="margin:15px 0; border:0; border-top:1px solid #333">
+            <button class="btn" style="background:#444" onclick="document.getElementById('art-in').click()">TROCAR ARTE</button>
             <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
-            <button class="btn" style="background:#a00; border:none;" onclick="removeActive()">DELETAR</button>
+            <button class="btn" style="background:#800; border:none;" onclick="kill()">DELETAR</button>
         </div>
     </div>
-
     <div id="viewport"></div>
 </div>
 
 <script>
-    let activeSceneId = null;
-    let scenes = {};
-    let activeToken = null;
-    let zCount = 100;
+    let scenes = {}, activeId = null, activeEl = null, zIdx = 100;
+    const vp = document.getElementById('viewport');
 
-    // --- CENAS ---
-    function createNewScene() {
-        const id = 's-' + Date.now();
-        const name = prompt("Nome da Cena:", "Cena " + (Object.keys(scenes).length + 1));
+    function addScene() {
+        const id = 's' + Date.now();
+        const name = prompt("Nome da cena:", "Cena " + (Object.keys(scenes).length + 1));
         if(!name) return;
-        const world = document.createElement('div');
-        world.id = id; world.className = 'world-layer';
-        world.innerHTML = `<img class="map-img" style="display:none;">`;
-        document.getElementById('viewport').appendChild(world);
-        scenes[id] = { name, camera: { x: 0, y: 0, zoom: 1 }, el: world };
-        renderTabs();
-        switchScene(id);
+        const div = document.createElement('div');
+        div.className = 'world';
+        div.innerHTML = `<img class="map" style="display:none; pointer-events:none; user-select:none;">`;
+        vp.appendChild(div);
+        scenes[id] = { name, cam: { x:0, y:0, z:1 }, el: div };
+        renderScenes();
+        goScene(id);
     }
 
-    function renderTabs() {
+    function renderScenes() {
         const list = document.getElementById('scenes-list');
         list.innerHTML = '';
         Object.keys(scenes).forEach(id => {
             const b = document.createElement('button');
-            b.className = `scene-btn ${id === activeSceneId ? 'active' : ''}`;
+            b.className = 'scene-btn' + (id === activeId ? ' active' : '');
             b.innerText = scenes[id].name;
-            b.onclick = () => switchScene(id);
+            b.onclick = () => goScene(id);
             list.appendChild(b);
         });
     }
 
-    function switchScene(id) {
+    function goScene(id) {
         deselect();
-        activeSceneId = id;
-        document.querySelectorAll('.world-layer').forEach(w => w.classList.remove('active'));
+        activeId = id;
+        document.querySelectorAll('.world').forEach(w => w.style.display = 'none');
+        scenes[id].el.style.display = 'block';
         scenes[id].el.classList.add('active');
-        renderTabs();
+        renderScenes();
         updateCam();
     }
 
-    // --- CÂMERA ---
-    const vp = document.getElementById('viewport');
     function updateCam() {
-        if(!activeSceneId) return;
-        const s = scenes[activeSceneId];
-        s.el.style.transform = `translate(${s.camera.x}px, ${s.camera.y}px) scale(${s.camera.zoom})`;
+        if(!activeId) return;
+        const s = scenes[activeId];
+        s.el.style.transform = `translate(${s.cam.x}px, ${s.cam.y}px) scale(${s.cam.z})`;
     }
 
-    vp.onwheel = e => {
-        if(!activeSceneId) return;
-        e.preventDefault();
-        const s = scenes[activeSceneId];
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(0.1, s.camera.zoom * delta), 5);
-        const mx = e.clientX - vp.offsetLeft;
-        const my = e.clientY - vp.offsetTop;
-        s.camera.x = mx - (mx - s.camera.x) * (newZoom / s.camera.zoom);
-        s.camera.y = my - (my - s.camera.y) * (newZoom / s.camera.zoom);
-        s.camera.zoom = newZoom;
-        updateCam();
-    };
-
+    // ARRASTAR MAPA (DIREITO OU MEIO)
     let isPan = false;
-    vp.onmousedown = e => { if(e.button >= 1) isPan = true; else if(e.target === vp) deselect(); };
-    window.onmousemove = e => { if(isPan && activeSceneId) { scenes[activeSceneId].camera.x += e.movementX; scenes[activeSceneId].camera.y += e.movementY; updateCam(); }};
+    vp.onmousedown = e => { 
+        if(e.button >= 1) isPan = true; 
+        else if(e.target === vp) deselect(); 
+    };
+    window.onmousemove = e => {
+        if(isPan && activeId) {
+            scenes[activeId].cam.x += e.movementX;
+            scenes[activeId].cam.y += e.movementY;
+            updateCam();
+        }
+    };
     window.onmouseup = () => isPan = false;
     vp.oncontextmenu = e => e.preventDefault();
 
-    // --- TOKENS ---
+    // ZOOM
+    vp.onwheel = e => {
+        if(!activeId) return;
+        e.preventDefault();
+        const s = scenes[activeId];
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const nextZ = Math.min(Math.max(0.1, s.cam.z * delta), 5);
+        const rect = vp.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        s.cam.x = mx - (mx - s.cam.x) * (nextZ / s.cam.z);
+        s.cam.y = my - (my - s.cam.y) * (nextZ / s.cam.z);
+        s.cam.z = nextZ;
+        updateCam();
+    };
+
+    // TOKENS
     function spawn(type) {
-        if(!activeSceneId) return;
-        const s = scenes[activeSceneId];
+        if(!activeId) return;
+        const s = scenes[activeId];
         const el = document.createElement('div');
         el.className = type === 'hero' ? 'token' : 'fog';
-        el.style.left = `${(vp.offsetWidth/2 - s.camera.x)/s.camera.zoom - 50}px`;
-        el.style.top = `${(vp.offsetHeight/2 - s.camera.y)/s.camera.zoom - 50}px`;
         
+        // Posicionamento Central
+        const rect = vp.getBoundingClientRect();
+        el.style.left = `${(rect.width/2 - s.cam.x)/s.cam.z - 50}px`;
+        el.style.top = `${(rect.height/2 - s.cam.y)/s.cam.z - 50}px`;
+
         if(type === 'hero') {
-            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">Novo</div>`;
-            el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.state = 'normal'; el.dataset.flip = 1;
+            el.innerHTML = `<div class="hp-bar"><div class="hp-fill"></div></div><div class="tk-art"></div><div class="tk-name">Novo</div>`;
+            Object.assign(el.dataset, { cur:20, max:20, size:100, state:'normal', flip:1 });
         } else {
-            el.style.width = '200px'; el.style.height = '200px'; el.style.opacity = "1";
+            el.style.width = '200px'; el.style.height = '200px'; el.style.opacity = '1';
         }
 
+        // INTERAÇÃO DE ARRASTE DO TOKEN (CORRIGIDA)
         el.onmousedown = e => {
             if(e.button !== 0) return;
             e.stopPropagation();
             select(el);
             let lx = e.clientX, ly = e.clientY;
             const move = ev => {
-                const dx = (ev.clientX - lx) / s.camera.zoom;
-                const dy = (ev.clientY - ly) / s.camera.zoom;
+                const dx = (ev.clientX - lx) / s.cam.z;
+                const dy = (ev.clientY - ly) / s.cam.z;
                 el.style.left = (parseFloat(el.style.left) + dx) + 'px';
                 el.style.top = (parseFloat(el.style.top) + dy) + 'px';
                 lx = ev.clientX; ly = ev.clientY;
@@ -240,20 +211,22 @@
             window.onmousemove = move;
             window.onmouseup = () => window.onmousemove = isPan ? window.onmousemove : null;
         };
+
         s.el.appendChild(el);
         select(el);
-        update();
+        apply();
     }
 
     function select(el) {
         deselect();
-        activeToken = el;
+        activeEl = el;
         el.classList.add('selected');
-        el.style.zIndex = ++zCount;
+        el.style.zIndex = ++zIdx;
         document.getElementById('edit-panel').style.display = 'block';
         const isH = el.classList.contains('token');
-        document.getElementById('hero-fields').style.display = isH ? 'block' : 'none';
-        document.getElementById('fog-fields').style.display = isH ? 'none' : 'block';
+        document.getElementById('hero-ctrl').style.display = isH ? 'block' : 'none';
+        document.getElementById('fog-ctrl').style.display = isH ? 'none' : 'block';
+        
         if(isH) {
             document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
             document.getElementById('in-size').value = el.dataset.size;
@@ -268,21 +241,62 @@
     }
 
     function deselect() {
-        activeToken = null;
-        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        activeEl = null;
+        document.querySelectorAll('.token, .fog').forEach(t => t.classList.remove('selected'));
         document.getElementById('edit-panel').style.display = 'none';
     }
 
-    function update() {
-        if(!activeToken || !activeToken.classList.contains('token')) return;
-        activeToken.dataset.size = document.getElementById('in-size').value;
-        activeToken.dataset.cur = document.getElementById('in-cur').value;
-        activeToken.dataset.max = document.getElementById('in-max').value;
-        activeToken.dataset.state = document.getElementById('in-state').value;
-        const art = activeToken.querySelector('.tk-art');
-        art.style.width = activeToken.dataset.size + 'px';
-        art.style.height = activeToken.dataset.size + 'px';
-        art.style.transform = `scaleX(${activeToken.dataset.flip || 1})`;
-        art.className = 'tk-art state-' + activeToken.dataset.state;
-        activeToken.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        activeToken.querySelector('.hp-bar-fill').style.width = (activeToken.dataset.cur/activeToken.dataset.max*10
+    function apply() {
+        if(!activeEl || !activeEl.classList.contains('token')) return;
+        const d = activeEl.dataset;
+        d.size = document.getElementById('in-size').value;
+        d.cur = document.getElementById('in-cur').value;
+        d.max = document.getElementById('in-max').value;
+        d.state = document.getElementById('in-state').value;
+        
+        const art = activeEl.querySelector('.tk-art');
+        art.style.width = d.size + 'px';
+        art.style.height = d.size + 'px';
+        art.style.transform = `scaleX(${d.flip})`;
+        art.className = 'tk-art state-' + d.state;
+        
+        activeEl.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
+        activeEl.querySelector('.hp-fill').style.width = (d.cur/d.max*100) + '%';
+    }
+
+    function applyFog() {
+        if(!activeEl) return;
+        activeEl.style.width = document.getElementById('in-w').value + 'px';
+        activeEl.style.height = document.getElementById('in-h').value + 'px';
+        activeEl.style.opacity = document.getElementById('in-op').value / 100;
+    }
+
+    function flip() { if(activeEl) { activeEl.dataset.flip *= -1; apply(); } }
+    function kill() { if(activeEl) { activeEl.remove(); deselect(); } }
+
+    function loadMap(i) {
+        if(i.files[0] && activeId) {
+            const r = new FileReader();
+            r.onload = e => { const img = scenes[activeId].el.querySelector('.map'); img.src = e.target.result; img.style.display = 'block'; };
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+
+    function loadArt(i) {
+        if(i.files[0] && activeEl) {
+            const r = new FileReader();
+            r.onload = e => activeEl.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+
+    window.onkeydown = e => {
+        if(e.target.tagName === 'INPUT') return;
+        if(e.key === 'Delete') kill();
+        if(e.key.toLowerCase() === 'f') flip();
+    };
+
+    addScene(); // Inicia com uma cena
+</script>
+</body>
+</html>
