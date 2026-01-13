@@ -2,168 +2,197 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ENGINE CORE V7</title>
+    <title>NEXUS VTT // MULTI-SCENE V8</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #00f2ff; --red: #ff3e3e; --bg: #020203; }
         * { box-sizing: border-box; outline: none; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; height: 100vh; overflow: hidden; flex-direction: column; }
+
+        /* BARRA DE CENAS (NOVO) */
+        #scene-bar { 
+            height: 40px; background: #0a0a0c; border-bottom: 1px solid rgba(0,242,255,0.2);
+            display: flex; align-items: center; padding: 0 10px; gap: 10px; z-index: 1100;
+        }
+        .scene-btn { 
+            background: #111; border: 1px solid #333; color: #888; padding: 4px 15px; 
+            font-family: 'Orbitron'; font-size: 10px; cursor: pointer; transition: 0.2s;
+        }
+        .scene-btn.active { border-color: var(--neon); color: var(--neon); background: rgba(0,242,255,0.05); }
+        .add-scene { color: var(--neon); font-weight: bold; cursor: pointer; padding: 0 10px; }
+
+        #main-container { display: flex; flex: 1; overflow: hidden; }
 
         /* SIDEBAR */
         #sidebar { 
             width: 300px; background: rgba(10,10,12,0.98); border-right: 1px solid rgba(0,242,255,0.2); 
-            padding: 20px; z-index: 1000; overflow-y: auto; backdrop-filter: blur(15px);
+            padding: 20px; z-index: 1000; overflow-y: auto;
         }
-        .brand { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; margin-bottom: 25px; text-align: center; text-shadow: 0 0 10px var(--neon); }
+        .brand { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; margin-bottom: 25px; text-align: center; }
 
-        /* MESA DE JOGO (INFINITA) */
-        #viewport { 
-            flex: 1; position: relative; overflow: hidden; background-color: #080808;
-            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 40px 40px; cursor: grab; touch-action: none;
-        }
-        #viewport:active { cursor: grabbing; }
-
-        #world { 
-            position: absolute; transform-origin: 0 0; will-change: transform; 
-            pointer-events: none; /* Deixa cliques passarem para o viewport se não houver token */
-        }
-        #world * { pointer-events: auto; } /* Reativa para os filhos (tokens) */
-
-        /* OBJETOS */
-        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
-        .tk-art { 
-            width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
-            background-position: center bottom; position: relative; transition: filter 0.2s;
-        }
+        /* VIEWPORT */
+        #viewport { flex: 1; position: relative; overflow: hidden; background-color: #080808; cursor: grab; }
+        .world-layer { position: absolute; transform-origin: 0 0; display: none; }
+        .world-layer.active { display: block; }
         
-        .selected .tk-art { filter: drop-shadow(0 0 15px var(--neon)); }
-        .selected .tk-name { border-color: var(--neon); color: var(--neon); }
+        #map-img { pointer-events: none; user-select: none; }
 
-        /* ESTADOS */
-        .state-dead { filter: grayscale(1) brightness(0.2) !important; }
-        .state-injured { animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        /* TOKENS */
+        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+        .tk-art { width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; background-position: center bottom; position: relative; }
+        .selected .tk-art { filter: drop-shadow(0 0 15px var(--neon)); border: 1px dashed var(--neon); }
 
-        /* UI */
-        .hp-bar-container { width: 100%; height: 4px; background: #000; border: 1px solid #333; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
+        /* UI ELEMENTOS */
+        .hp-bar-container { width: 100%; height: 4px; background: #000; border: 1px solid #333; margin-bottom: 4px; }
         .hp-bar-fill { height: 100%; background: var(--red); transition: width 0.3s; }
-        .tk-name { font-size: 10px; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid #333; border-radius: 2px; white-space: nowrap; margin-top: 4px; transition: 0.2s; }
-
+        .tk-name { font-size: 10px; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid #333; margin-top: 4px; }
         .fog { background: rgba(0,0,0,0.98); border: 1px dashed #444; }
-        .fog.selected { border: 1px solid var(--neon); background: rgba(0,0,0,0.85); }
 
-        /* BOTÕES */
-        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 8px; transition: 0.2s; }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
-        .edit-panel { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; border-left: 2px solid var(--neon); }
-        label { font-size: 9px; color: #555; display: block; margin-top: 10px; text-transform: uppercase; }
-        input, select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 7px; margin-top: 5px; font-family: inherit; }
+        /* FORMULÁRIOS */
+        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 8px; }
+        .btn:hover { background: var(--neon); color: #000; }
+        .edit-panel { background: rgba(255,255,255,0.03); padding: 15px; display: none; border-left: 2px solid var(--neon); }
+        input, select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 7px; margin-top: 5px; }
+        label { font-size: 9px; color: #555; display: block; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <div class="brand">NEXUS // CORE V7</div>
-    
-    <button class="btn" onclick="document.getElementById('map-in').click()">🗺️ CARREGAR MAPA</button>
-    <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
-    
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-        <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
-        <button class="btn" onclick="spawn('fog')">🌑 SOMBRA</button>
-    </div>
-
-    <div id="edit-panel" class="edit-panel">
-        <h3 id="panel-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0; font-family:'Orbitron'">EDITAR ALVO</h3>
-        
-        <label>NOME:</label>
-        <input type="text" id="in-name" oninput="update()">
-        
-        <div id="hero-only">
-            <label>ESCALA:</label>
-            <input type="range" id="in-size" min="30" max="800" oninput="update()">
-            <label>VIDA:</label>
-            <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="update()"><input type="number" id="in-max" oninput="update()"></div>
-            <label>ESTADO:</label>
-            <select id="in-state" onchange="update()">
-                <option value="normal">NORMAL</option>
-                <option value="injured">FERIDO</option>
-                <option value="dead">MORTO</option>
-            </select>
-            <button class="btn" style="margin-top:10px;" onclick="flip()">INVERTER (F)</button>
-        </div>
-
-        <div id="fog-only" style="display:none">
-            <label>DIMENSÕES (L x A):</label>
-            <div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
-        </div>
-
-        <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">📷 MUDAR ARTE</button>
-        <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
-        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:5px;" onclick="removeActive()">🗑️ DELETAR (DEL)</button>
-    </div>
+<div id="scene-bar">
+    <div id="scenes-list" style="display:flex; gap:5px;"></div>
+    <div class="add-scene" onclick="createNewScene()">+ NOVA CENA</div>
 </div>
 
-<div id="viewport">
-    <div id="world">
-        <img id="map-img" src="" style="display:none; pointer-events: none;">
+<div id="main-container">
+    <div id="sidebar">
+        <div class="brand">NEXUS // OMNI V8</div>
+        <button class="btn" onclick="document.getElementById('map-in').click()">🗺️ CARREGAR MAPA NESTA CENA</button>
+        <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+            <button class="btn" onclick="spawn('hero')">👤 HERÓI</button>
+            <button class="btn" onclick="spawn('fog')">🌑 SOMBRA</button>
+        </div>
+
+        <div id="edit-panel" class="edit-panel">
+            <label>NOME:</label>
+            <input type="text" id="in-name" oninput="update()">
+            <div id="hero-only">
+                <label>TAMANHO:</label><input type="range" id="in-size" min="30" max="800" oninput="update()">
+                <label>VIDA:</label>
+                <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="update()"><input type="number" id="in-max" oninput="update()"></div>
+                <label>ESTADO:</label>
+                <select id="in-state" onchange="update()">
+                    <option value="normal">NORMAL</option>
+                    <option value="injured">FERIDO</option>
+                    <option value="dead">MORTO</option>
+                </select>
+            </div>
+            <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">📷 MUDAR ARTE</button>
+            <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
+            <button class="btn" style="border-color:var(--red); color:var(--red);" onclick="removeActive()">🗑️ DELETAR</button>
+        </div>
     </div>
+
+    <div id="viewport">
+        </div>
 </div>
 
 <script>
-    let active = null;
-    let camera = { x: 0, y: 0, zoom: 1 };
+    let activeSceneId = null;
+    let scenes = {}; // Guarda dados de zoom/pos de cada cena
+    let activeToken = null;
     let zIdxCount = 100;
-    const viewport = document.getElementById('viewport');
-    const world = document.getElementById('world');
 
-    // --- SISTEMA DE CÂMERA ---
-    function updateCamera() {
-        world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
+    // --- GERENCIAMENTO DE CENAS ---
+    function createNewScene() {
+        const id = 'scene-' + Date.now();
+        const name = prompt("Nome da Cena:", "Cena " + (Object.keys(scenes).length + 1));
+        if(!name) return;
+
+        // Criar elemento visual da cena no mundo
+        const world = document.createElement('div');
+        world.id = id;
+        world.className = 'world-layer';
+        world.innerHTML = `<img class="map-img" style="display:none; pointer-events:none;">`;
+        document.getElementById('viewport').appendChild(world);
+
+        scenes[id] = { 
+            name: name, 
+            camera: { x: 0, y: 0, zoom: 1 },
+            el: world 
+        };
+
+        renderSceneTabs();
+        switchScene(id);
     }
 
-    // Zoom
+    function renderSceneTabs() {
+        const list = document.getElementById('scenes-list');
+        list.innerHTML = '';
+        Object.keys(scenes).forEach(id => {
+            const btn = document.createElement('button');
+            btn.className = `scene-btn ${id === activeSceneId ? 'active' : ''}`;
+            btn.innerText = scenes[id].name;
+            btn.onclick = () => switchScene(id);
+            list.appendChild(btn);
+        });
+    }
+
+    function switchScene(id) {
+        deselectAll();
+        activeSceneId = id;
+        document.querySelectorAll('.world-layer').forEach(w => w.classList.remove('active'));
+        scenes[id].el.classList.add('active');
+        renderSceneTabs();
+        updateCamera();
+    }
+
+    // --- CÂMERA (CORRIGIDA PARA MULTICENAS) ---
+    const viewport = document.getElementById('viewport');
+    
+    function updateCamera() {
+        if(!activeSceneId) return;
+        const s = scenes[activeSceneId];
+        s.el.style.transform = `translate(${s.camera.x}px, ${s.camera.y}px) scale(${s.camera.zoom})`;
+    }
+
     viewport.onwheel = e => {
+        if(!activeSceneId) return;
         e.preventDefault();
+        const s = scenes[activeSceneId];
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(0.1, camera.zoom * delta), 5);
+        const newZoom = Math.min(Math.max(0.1, s.camera.zoom * delta), 5);
         const mouseX = e.clientX - viewport.offsetLeft;
         const mouseY = e.clientY - viewport.offsetTop;
-        camera.x = mouseX - (mouseX - camera.x) * (newZoom / camera.zoom);
-        camera.y = mouseY - (mouseY - camera.y) * (newZoom / camera.zoom);
-        camera.zoom = newZoom;
+        
+        s.camera.x = mouseX - (mouseX - s.camera.x) * (newZoom / s.camera.zoom);
+        s.camera.y = mouseY - (mouseY - s.camera.y) * (newZoom / s.camera.zoom);
+        s.camera.zoom = newZoom;
         updateCamera();
     };
 
-    // Arrastar Mapa (Botão Direito ou Meio)
     let isPanning = false;
-    viewport.addEventListener('mousedown', e => {
-        if(e.button === 2 || e.button === 1) {
-            isPanning = true;
-        } else if (e.target === viewport) {
-            // Se clicar no fundo vazio com botão esquerdo, deseleciona tudo
-            deselectAll();
-        }
-    });
-
-    window.addEventListener('mousemove', e => {
-        if(isPanning) {
-            camera.x += e.movementX;
-            camera.y += e.movementY;
+    viewport.onmousedown = e => {
+        if(e.button === 2 || e.button === 1) isPanning = true;
+        else if(e.target === viewport) deselectAll();
+    };
+    window.onmousemove = e => {
+        if(isPanning && activeSceneId) {
+            scenes[activeSceneId].camera.x += e.movementX;
+            scenes[activeSceneId].camera.y += e.movementY;
             updateCamera();
         }
-    });
-
-    window.addEventListener('mouseup', () => { isPanning = false; });
+    };
+    window.onmouseup = () => isPanning = false;
     viewport.oncontextmenu = e => e.preventDefault();
 
-    // --- FUNÇÕES DE NÚCLEO ---
+    // --- TOKENS E MAPA ---
     function loadMap(i) {
-        if(i.files[0]) {
+        if(i.files[0] && activeSceneId) {
             const r = new FileReader();
             r.onload = e => {
-                const img = document.getElementById('map-img');
+                const img = scenes[activeSceneId].el.querySelector('.map-img');
                 img.src = e.target.result;
                 img.style.display = 'block';
             };
@@ -171,127 +200,73 @@
         }
     }
 
-    function deselectAll() {
-        active = null;
-        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
-        document.getElementById('edit-panel').style.display = 'none';
-    }
-
-    function select(el) {
-        deselectAll();
-        active = el;
-        el.classList.add('selected');
-        el.style.zIndex = ++zIdxCount;
-        document.getElementById('edit-panel').style.display = 'block';
-        
-        const isHero = el.classList.contains('token');
-        document.getElementById('hero-only').style.display = isHero ? 'block' : 'none';
-        document.getElementById('fog-only').style.display = !isHero ? 'block' : 'none';
-
-        if(isHero) {
-            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
-            document.getElementById('in-size').value = el.dataset.size;
-            document.getElementById('in-cur').value = el.dataset.cur;
-            document.getElementById('in-max').value = el.dataset.max;
-            document.getElementById('in-state').value = el.dataset.state;
-        } else {
-            document.getElementById('in-name').value = "Sombra";
-            document.getElementById('in-w').value = parseInt(el.style.width);
-            document.getElementById('in-h').value = parseInt(el.style.height);
-        }
-    }
-
     function spawn(type) {
+        if(!activeSceneId) return;
+        const s = scenes[activeSceneId];
         const el = document.createElement('div');
         el.className = type === 'hero' ? 'token' : 'fog';
-        
-        // Centraliza na visão atual
-        el.style.left = `${(viewport.offsetWidth/2 - camera.x)/camera.zoom - 50}px`;
-        el.style.top = `${(viewport.offsetHeight/2 - camera.y)/camera.zoom - 50}px`;
+        el.style.left = `${(viewport.offsetWidth/2 - s.camera.x)/s.camera.zoom - 50}px`;
+        el.style.top = `${(viewport.offsetHeight/2 - s.camera.y)/s.camera.zoom - 50}px`;
         
         if(type === 'hero') {
-            el.innerHTML = `
-                <div class="hp-bar-container"><div class="hp-bar-fill"></div></div>
-                <div class="tk-art"></div>
-                <div class="tk-name">Novo Token</div>`;
+            el.innerHTML = `<div class="hp-bar-container"><div class="hp-bar-fill"></div></div><div class="tk-art"></div><div class="tk-name">Novo Token</div>`;
             el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.flip = 1; el.dataset.state = 'normal';
         } else {
             el.style.width = '200px'; el.style.height = '200px';
         }
 
-        // --- LÓGICA DE MOVIMENTAÇÃO DO TOKEN ---
-        el.addEventListener('mousedown', e => {
-            if(e.button !== 0) return; // Só botão esquerdo move token
-            e.stopPropagation(); // Impede o mapa de tentar arrastar junto
+        el.onmousedown = e => {
+            if(e.button !== 0) return;
+            e.stopPropagation();
             select(el);
-
-            let lastX = e.clientX;
-            let lastY = e.clientY;
-
-            const moveToken = ev => {
-                const dx = (ev.clientX - lastX) / camera.zoom;
-                const dy = (ev.clientY - lastY) / camera.zoom;
+            let lx = e.clientX, ly = e.clientY;
+            const move = ev => {
+                const dx = (ev.clientX - lx) / s.camera.zoom;
+                const dy = (ev.clientY - ly) / s.camera.zoom;
                 el.style.left = (parseFloat(el.style.left) + dx) + 'px';
                 el.style.top = (parseFloat(el.style.top) + dy) + 'px';
-                lastX = ev.clientX;
-                lastY = ev.clientY;
+                lx = ev.clientX; ly = ev.clientY;
             };
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', () => window.removeEventListener('mousemove', move), {once:true});
+        };
 
-            const stopToken = () => {
-                window.removeEventListener('mousemove', moveToken);
-                window.removeEventListener('mouseup', stopToken);
-            };
-
-            window.addEventListener('mousemove', moveToken);
-            window.addEventListener('mouseup', stopToken);
-        });
-
-        world.appendChild(el);
+        s.el.appendChild(el);
         select(el);
         update();
     }
 
+    function select(el) {
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        activeToken = el;
+        el.classList.add('selected');
+        el.style.zIndex = ++zIdxCount;
+        document.getElementById('edit-panel').style.display = 'block';
+        if(el.classList.contains('token')) {
+            document.getElementById('in-name').value = el.querySelector('.tk-name').innerText;
+            document.getElementById('in-size').value = el.dataset.size;
+        }
+    }
+
+    function deselectAll() {
+        activeToken = null;
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        document.getElementById('edit-panel').style.display = 'none';
+    }
+
     function update() {
-        if(!active || active.classList.contains('fog')) return;
-        active.dataset.size = document.getElementById('in-size').value;
-        active.dataset.cur = document.getElementById('in-cur').value;
-        active.dataset.max = document.getElementById('in-max').value;
-        active.dataset.state = document.getElementById('in-state').value;
-
-        const art = active.querySelector('.tk-art');
-        art.style.width = active.dataset.size + 'px';
-        art.style.height = active.dataset.size + 'px';
-        art.style.transform = `scaleX(${active.dataset.flip})`;
-        art.className = 'tk-art state-' + active.dataset.state;
-
-        active.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
-        const pct = (active.dataset.cur / active.dataset.max) * 100;
-        active.querySelector('.hp-bar-fill').style.width = pct + '%';
+        if(!activeToken || activeToken.classList.contains('fog')) return;
+        activeToken.dataset.size = document.getElementById('in-size').value;
+        const art = activeToken.querySelector('.tk-art');
+        art.style.width = activeToken.dataset.size + 'px';
+        art.style.height = activeToken.dataset.size + 'px';
+        activeToken.querySelector('.tk-name').innerText = document.getElementById('in-name').value;
     }
 
-    function updateFog() {
-        if(active && active.classList.contains('fog')) {
-            active.style.width = document.getElementById('in-w').value + 'px';
-            active.style.height = document.getElementById('in-h').value + 'px';
-        }
-    }
+    function removeActive() { if(activeToken) { activeToken.remove(); deselectAll(); } }
 
-    function flip() { if(active) { active.dataset.flip *= -1; update(); } }
-    function removeActive() { if(active) { active.remove(); deselectAll(); } }
-
-    function loadArt(i) {
-        if(i.files[0] && active) {
-            const r = new FileReader();
-            r.onload = e => active.querySelector('.tk-art').style.backgroundImage = `url(${e.target.result})`;
-            r.readAsDataURL(i.files[0]);
-        }
-    }
-
-    window.addEventListener('keydown', e => {
-        if(e.target.tagName === 'INPUT') return;
-        if(e.key === 'Delete') removeActive();
-        if(e.key.toLowerCase() === 'f') flip();
-    });
+    // Inicializar com uma cena
+    createNewScene();
 </script>
 </body>
 </html>
