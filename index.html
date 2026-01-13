@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS VTT // ENGINE CORE</title>
+    <title>NEXUS VTT // ENGINE CORE V7</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #00f2ff; --red: #ff3e3e; --bg: #020203; }
@@ -11,59 +11,62 @@
 
         /* SIDEBAR */
         #sidebar { 
-            width: 300px; background: rgba(10,10,12,0.95); border-right: 1px solid rgba(0,242,255,0.2); 
-            padding: 20px; z-index: 1000; overflow-y: auto; backdrop-filter: blur(10px);
+            width: 300px; background: rgba(10,10,12,0.98); border-right: 1px solid rgba(0,242,255,0.2); 
+            padding: 20px; z-index: 1000; overflow-y: auto; backdrop-filter: blur(15px);
         }
-        .brand { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; margin-bottom: 25px; text-align: center; }
+        .brand { font-family: 'Orbitron'; font-size: 14px; color: var(--neon); letter-spacing: 2px; margin-bottom: 25px; text-align: center; text-shadow: 0 0 10px var(--neon); }
 
         /* MESA DE JOGO (INFINITA) */
         #viewport { 
-            flex: 1; position: relative; overflow: hidden; background-image: radial-gradient(#111 1px, transparent 1px);
-            background-size: 30px 30px; cursor: grab; touch-action: none;
+            flex: 1; position: relative; overflow: hidden; background-color: #080808;
+            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px; cursor: grab; touch-action: none;
         }
         #viewport:active { cursor: grabbing; }
 
         #world { 
             position: absolute; transform-origin: 0 0; will-change: transform; 
-            display: inline-block;
+            pointer-events: none; /* Deixa cliques passarem para o viewport se não houver token */
         }
+        #world * { pointer-events: auto; } /* Reativa para os filhos (tokens) */
 
         /* OBJETOS */
-        .token { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
+        .token, .fog { position: absolute; z-index: 100; cursor: move; display: flex; flex-direction: column; align-items: center; }
         .tk-art { 
             width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; 
-            background-position: center bottom; position: relative;
+            background-position: center bottom; position: relative; transition: filter 0.2s;
         }
         
-        .selected .tk-art { filter: drop-shadow(0 0 10px var(--neon)); border: 1px dashed var(--neon); }
+        .selected .tk-art { filter: drop-shadow(0 0 15px var(--neon)); }
+        .selected .tk-name { border-color: var(--neon); color: var(--neon); }
 
         /* ESTADOS */
         .state-dead { filter: grayscale(1) brightness(0.2) !important; }
-        .state-dead::after { content: '❌'; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; }
         .state-injured { animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; filter: sepia(1) saturate(5) hue-rotate(-50deg); } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
         /* UI */
         .hp-bar-container { width: 100%; height: 4px; background: #000; border: 1px solid #333; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
         .hp-bar-fill { height: 100%; background: var(--red); transition: width 0.3s; }
-        .tk-name { font-size: 10px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 2px; white-space: nowrap; }
+        .tk-name { font-size: 10px; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid #333; border-radius: 2px; white-space: nowrap; margin-top: 4px; transition: 0.2s; }
 
-        .fog { position: absolute; background: rgba(0,0,0,0.98); border: 1px dashed #333; z-index: 50; }
-        .fog.selected { border: 1px solid var(--neon); }
+        .fog { background: rgba(0,0,0,0.98); border: 1px dashed #444; }
+        .fog.selected { border: 1px solid var(--neon); background: rgba(0,0,0,0.85); }
 
         /* BOTÕES */
-        .btn { background: transparent; border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 8px; transition: 0.3s; }
-        .btn:hover { background: var(--neon); color: #000; }
-        .edit-panel { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; }
-        input, select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 6px; margin-top: 5px; }
+        .btn { background: rgba(0,0,0,0.5); border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 9px; margin-bottom: 8px; transition: 0.2s; }
+        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
+        .edit-panel { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 4px; display: none; margin-top: 10px; border-left: 2px solid var(--neon); }
+        label { font-size: 9px; color: #555; display: block; margin-top: 10px; text-transform: uppercase; }
+        input, select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 7px; margin-top: 5px; font-family: inherit; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <div class="brand">NEXUS // ENGINE V6</div>
+    <div class="brand">NEXUS // CORE V7</div>
     
-    <button class="btn" onclick="document.getElementById('map-in').click()">📁 CARREGAR MAPA</button>
+    <button class="btn" onclick="document.getElementById('map-in').click()">🗺️ CARREGAR MAPA</button>
     <input type="file" id="map-in" style="display:none" onchange="loadMap(this)">
     
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
@@ -72,16 +75,17 @@
     </div>
 
     <div id="edit-panel" class="edit-panel">
-        <h3 style="font-size:10px; color:var(--neon); margin:0;">CONFIGURAÇÕES</h3>
-        <label style="font-size:9px; color:#666;">NOME:</label>
+        <h3 id="panel-title" style="font-size:10px; color:var(--neon); margin:0 0 10px 0; font-family:'Orbitron'">EDITAR ALVO</h3>
+        
+        <label>NOME:</label>
         <input type="text" id="in-name" oninput="update()">
         
         <div id="hero-only">
-            <label style="font-size:9px; color:#666;">TAMANHO:</label>
+            <label>ESCALA:</label>
             <input type="range" id="in-size" min="30" max="800" oninput="update()">
-            <label style="font-size:9px; color:#666;">VIDA:</label>
+            <label>VIDA:</label>
             <div style="display:flex; gap:5px"><input type="number" id="in-cur" oninput="update()"><input type="number" id="in-max" oninput="update()"></div>
-            <label style="font-size:9px; color:#666;">ESTADO:</label>
+            <label>ESTADO:</label>
             <select id="in-state" onchange="update()">
                 <option value="normal">NORMAL</option>
                 <option value="injured">FERIDO</option>
@@ -91,39 +95,39 @@
         </div>
 
         <div id="fog-only" style="display:none">
-            <label style="font-size:9px; color:#666;">LARGURA / ALTURA:</label>
+            <label>DIMENSÕES (L x A):</label>
             <div style="display:flex; gap:5px"><input type="number" id="in-w" oninput="updateFog()"><input type="number" id="in-h" oninput="updateFog()"></div>
         </div>
 
         <button class="btn" style="margin-top:15px; border-color:#fff; color:#fff;" onclick="document.getElementById('art-in').click()">📷 MUDAR ARTE</button>
         <input type="file" id="art-in" style="display:none" onchange="loadArt(this)">
-        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:5px;" onclick="removeActive()">🗑️ DELETAR</button>
+        <button class="btn" style="border-color:var(--red); color:var(--red); margin-top:5px;" onclick="removeActive()">🗑️ DELETAR (DEL)</button>
     </div>
 </div>
 
 <div id="viewport">
     <div id="world">
-        <img id="map-img" src="" style="display:none;">
-        </div>
+        <img id="map-img" src="" style="display:none; pointer-events: none;">
+    </div>
 </div>
 
 <script>
     let active = null;
     let camera = { x: 0, y: 0, zoom: 1 };
+    let zIdxCount = 100;
     const viewport = document.getElementById('viewport');
     const world = document.getElementById('world');
 
-    // --- ENGINE DE ZOOM E PAN ---
+    // --- SISTEMA DE CÂMERA ---
     function updateCamera() {
         world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
     }
 
+    // Zoom
     viewport.onwheel = e => {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         const newZoom = Math.min(Math.max(0.1, camera.zoom * delta), 5);
-        
-        // Zoom focado no mouse
         const mouseX = e.clientX - viewport.offsetLeft;
         const mouseY = e.clientY - viewport.offsetTop;
         camera.x = mouseX - (mouseX - camera.x) * (newZoom / camera.zoom);
@@ -132,30 +136,29 @@
         updateCamera();
     };
 
+    // Arrastar Mapa (Botão Direito ou Meio)
     let isPanning = false;
-    viewport.onmousedown = e => {
-        if(e.button === 2 || e.button === 1) { // Direito ou Meio
+    viewport.addEventListener('mousedown', e => {
+        if(e.button === 2 || e.button === 1) {
             isPanning = true;
-            viewport.style.cursor = 'grabbing';
+        } else if (e.target === viewport) {
+            // Se clicar no fundo vazio com botão esquerdo, deseleciona tudo
+            deselectAll();
         }
-    };
+    });
 
-    window.onmousemove = e => {
+    window.addEventListener('mousemove', e => {
         if(isPanning) {
             camera.x += e.movementX;
             camera.y += e.movementY;
             updateCamera();
         }
-    };
+    });
 
-    window.onmouseup = () => { 
-        isPanning = false; 
-        viewport.style.cursor = 'grab';
-    };
-
+    window.addEventListener('mouseup', () => { isPanning = false; });
     viewport.oncontextmenu = e => e.preventDefault();
 
-    // --- ENGINE DE TOKENS ---
+    // --- FUNÇÕES DE NÚCLEO ---
     function loadMap(i) {
         if(i.files[0]) {
             const r = new FileReader();
@@ -168,50 +171,17 @@
         }
     }
 
-    function spawn(type) {
-        const el = document.createElement('div');
-        el.className = type === 'hero' ? 'token' : 'fog';
-        el.style.left = `${(viewport.offsetWidth/2 - camera.x)/camera.zoom}px`;
-        el.style.top = `${(viewport.offsetHeight/2 - camera.y)/camera.zoom}px`;
-        
-        if(type === 'hero') {
-            el.innerHTML = `
-                <div class="hp-bar-container"><div class="hp-bar-fill"></div></div>
-                <div class="tk-art"></div>
-                <div class="tk-name">Novo Token</div>`;
-            el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.flip = 1;
-        } else {
-            el.style.width = '200px'; el.style.height = '200px';
-        }
-
-        el.onmousedown = e => {
-            if(e.button !== 0) return;
-            e.stopPropagation();
-            select(el);
-            let lastX = e.clientX;
-            let lastY = e.clientY;
-
-            const move = ev => {
-                const dx = (ev.clientX - lastX) / camera.zoom;
-                const dy = (ev.clientY - lastY) / camera.zoom;
-                el.style.left = (parseFloat(el.style.left) + dx) + 'px';
-                el.style.top = (parseFloat(el.style.top) + dy) + 'px';
-                lastX = ev.clientX;
-                lastY = ev.clientY;
-            };
-            window.onmousemove = move;
-            window.onmouseup = () => { window.onmousemove = isPanning ? window.onmousemove : null; };
-        };
-
-        world.appendChild(el);
-        select(el);
-        update();
+    function deselectAll() {
+        active = null;
+        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
+        document.getElementById('edit-panel').style.display = 'none';
     }
 
     function select(el) {
+        deselectAll();
         active = el;
-        document.querySelectorAll('.token, .fog').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
+        el.style.zIndex = ++zIdxCount;
         document.getElementById('edit-panel').style.display = 'block';
         
         const isHero = el.classList.contains('token');
@@ -223,11 +193,62 @@
             document.getElementById('in-size').value = el.dataset.size;
             document.getElementById('in-cur').value = el.dataset.cur;
             document.getElementById('in-max').value = el.dataset.max;
-            document.getElementById('in-state').value = el.dataset.state || 'normal';
+            document.getElementById('in-state').value = el.dataset.state;
         } else {
+            document.getElementById('in-name').value = "Sombra";
             document.getElementById('in-w').value = parseInt(el.style.width);
             document.getElementById('in-h').value = parseInt(el.style.height);
         }
+    }
+
+    function spawn(type) {
+        const el = document.createElement('div');
+        el.className = type === 'hero' ? 'token' : 'fog';
+        
+        // Centraliza na visão atual
+        el.style.left = `${(viewport.offsetWidth/2 - camera.x)/camera.zoom - 50}px`;
+        el.style.top = `${(viewport.offsetHeight/2 - camera.y)/camera.zoom - 50}px`;
+        
+        if(type === 'hero') {
+            el.innerHTML = `
+                <div class="hp-bar-container"><div class="hp-bar-fill"></div></div>
+                <div class="tk-art"></div>
+                <div class="tk-name">Novo Token</div>`;
+            el.dataset.cur = 20; el.dataset.max = 20; el.dataset.size = 100; el.dataset.flip = 1; el.dataset.state = 'normal';
+        } else {
+            el.style.width = '200px'; el.style.height = '200px';
+        }
+
+        // --- LÓGICA DE MOVIMENTAÇÃO DO TOKEN ---
+        el.addEventListener('mousedown', e => {
+            if(e.button !== 0) return; // Só botão esquerdo move token
+            e.stopPropagation(); // Impede o mapa de tentar arrastar junto
+            select(el);
+
+            let lastX = e.clientX;
+            let lastY = e.clientY;
+
+            const moveToken = ev => {
+                const dx = (ev.clientX - lastX) / camera.zoom;
+                const dy = (ev.clientY - lastY) / camera.zoom;
+                el.style.left = (parseFloat(el.style.left) + dx) + 'px';
+                el.style.top = (parseFloat(el.style.top) + dy) + 'px';
+                lastX = ev.clientX;
+                lastY = ev.clientY;
+            };
+
+            const stopToken = () => {
+                window.removeEventListener('mousemove', moveToken);
+                window.removeEventListener('mouseup', stopToken);
+            };
+
+            window.addEventListener('mousemove', moveToken);
+            window.addEventListener('mouseup', stopToken);
+        });
+
+        world.appendChild(el);
+        select(el);
+        update();
     }
 
     function update() {
@@ -256,7 +277,7 @@
     }
 
     function flip() { if(active) { active.dataset.flip *= -1; update(); } }
-    function removeActive() { if(active) { active.remove(); active = null; document.getElementById('edit-panel').style.display = 'none'; } }
+    function removeActive() { if(active) { active.remove(); deselectAll(); } }
 
     function loadArt(i) {
         if(i.files[0] && active) {
@@ -266,12 +287,11 @@
         }
     }
 
-    // Atalhos
-    window.onkeydown = e => {
+    window.addEventListener('keydown', e => {
         if(e.target.tagName === 'INPUT') return;
         if(e.key === 'Delete') removeActive();
         if(e.key.toLowerCase() === 'f') flip();
-    };
+    });
 </script>
 </body>
 </html>
